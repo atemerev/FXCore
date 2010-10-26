@@ -2,6 +2,7 @@ package com.miriamlaurel.fxcore
 
 import java.util.{Date, UUID}
 import com.miriamlaurel.fxcore.numbers.Decimal
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
@@ -12,7 +13,8 @@ class Offer(val id: String,
             val side: OfferSide.Value,
             val amount: Decimal,
             val price: Decimal,
-            override val timestamp: Date) extends Ordered[Offer] with TimeEvent {
+            override val timestamp: Date) extends Ordered[Offer] with Serializable with TimeEvent {
+
   def this(source: String,
            instrument: Instrument,
            side: OfferSide.Value,

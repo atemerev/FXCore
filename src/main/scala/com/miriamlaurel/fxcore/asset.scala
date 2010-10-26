@@ -1,11 +1,12 @@
 package com.miriamlaurel.fxcore
 
 import java.util.Currency
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-abstract class Asset {
+abstract class Asset extends Serializable {
   def code: String
 }
 

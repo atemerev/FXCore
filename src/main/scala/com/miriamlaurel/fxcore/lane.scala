@@ -2,6 +2,7 @@ package com.miriamlaurel.fxcore
 
 import java.util.Date
 import com.miriamlaurel.fxcore.numbers.Decimal
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
@@ -9,7 +10,7 @@ import com.miriamlaurel.fxcore.numbers.Decimal
 class Lane(
   val instrument: Instrument,
   allOffers: List[Offer],
-  override val timestamp: Date) extends TimeEvent {
+  override val timestamp: Date) extends TimeEvent with Serializable {
 
   def this(instrument: Instrument, allOffers: List[Offer]) =
     this(instrument, allOffers, allOffers.map(_.timestamp).reduceLeft(Lane.min(_, _)))

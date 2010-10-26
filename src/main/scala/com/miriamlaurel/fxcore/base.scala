@@ -1,11 +1,12 @@
 package com.miriamlaurel.fxcore
 
 import java.util.{Date, UUID}
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-trait Entity {
+trait Entity extends Serializable {
   val uuid: UUID = UUID.randomUUID
 
   override def equals(that: Any): Boolean = that match {

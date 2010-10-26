@@ -1,11 +1,12 @@
 package com.miriamlaurel.fxcore
 
 import scala.collection.mutable.Map
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-abstract class Instrument {
+abstract class Instrument extends Serializable {
   def primary: Asset
   def secondary: Asset
 

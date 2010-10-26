@@ -4,6 +4,7 @@ import com.miriamlaurel.fxcore.pipscaler._
 import scala.math._
 import java.util.UUID
 import com.miriamlaurel.fxcore.numbers._
+import java.io.Serializable
 
 
 /**
@@ -127,7 +128,7 @@ object PositionSide extends Enumeration {
   val Long, Short = Value
 }
 
-abstract class Portfolio {
+abstract class Portfolio extends Serializable {
   def <<(position: Position): Pair[StrictPortfolio, Money]
 
   def amount(instrument: Instrument): Decimal

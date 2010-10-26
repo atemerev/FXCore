@@ -3,11 +3,12 @@ package com.miriamlaurel.fxcore
 import java.util.Date
 import scala.math.max
 import com.miriamlaurel.fxcore.numbers.{Monetary, Zilch, Money, Decimal}
+import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) {
+class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) extends Serializable {
 
   val quotesMap = Map[Instrument, Lane](lanes.map(l => (l.instrument, l)): _*)
 
