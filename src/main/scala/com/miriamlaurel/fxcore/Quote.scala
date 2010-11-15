@@ -12,6 +12,7 @@ class Quote(
         val bid: Option[Decimal],
         val ask: Option[Decimal],
         override val timestamp: Date) extends TimeEvent {
+  
   def average = if (isFull) (Some((bid.get + ask.get) / 2)) else None
 
   def isFull = bid.isDefined && ask.isDefined

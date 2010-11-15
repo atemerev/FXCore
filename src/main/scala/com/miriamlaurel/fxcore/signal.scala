@@ -11,14 +11,17 @@ sealed abstract class Signal(override val timestamp: Date, val refQuote: Quote) 
 }
 
 case class BuySignal(ts: Date, ref: Quote) extends Signal(ts, ref) {
-  def side = 1
-  def reverse = SellSignal(ts, ref)
+  override def side = 1
+  override def reverse = SellSignal(ts, ref)
+  override def toString = "Buy signal @ " + ref + ", " + ts
 }
 case class SellSignal(ts: Date, ref: Quote) extends Signal(ts, ref) {
-  def side = -1
-  def reverse = BuySignal(ts, ref)
+  override def side = -1
+  override def reverse = BuySignal(ts, ref)
+  override def toString = "Sell signal @ " + ref + ", " + ts
 }
 case class CloseSignal(ts: Date, ref: Quote) extends Signal(ts, ref) {
-  def side = 0
-  def reverse = throw new NoSuchElementException("Can't reverse a close signal")
+  override def side = 0
+  override def reverse = throw new NoSuchElementException("Can't reverse a close signal")
+  override def toString = "Close signal @ " + ref + ", " + ts
 }

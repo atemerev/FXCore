@@ -11,8 +11,12 @@ import java.io.Serializable
  * @author Alexander Temerev
  */
 class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = null) extends Entity {
+
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
     this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
+
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID) =
+    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
 
   val matchUuid: Option[UUID] = if (matching != null) Some(matching) else None
 
@@ -33,8 +37,8 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
   def profitLossIn(asset: Asset, market: Market): Option[Money] = {
     for (q <- market.quote(instrument, amount);
          raw <- profitLoss(q);
-         s = if (raw.amount >= 0) OfferSide.Bid else OfferSide.Ask;
-         m <- market.convert(raw, asset, s, amount)) yield m
+         side = if (raw.amount >= 0) OfferSide.Bid else OfferSide.Ask;
+         m <- market.convert(raw, asset, side, amount)) yield m
   }
 
   def close(market: Market): Option[Position] = {
@@ -47,47 +51,6 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
     case cp: CurrencyPair => asPips(cp, (price - this.price) * primary.amount.signum)
     case _ => throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
   }
-
-
-/*
-
-    public Position merge(Position newPosition) {
-
-        // a, b: initial positions;
-        // c: position to collapse;
-        // d: remaining position;
-        // e: profit/loss position (with zero primary amount)
-        // f: resulting position.
-
-        Monetary a1 = this.primary.getValue();
-        Monetary a2 = this.secondary.getValue();
-        Monetary b1 = newPosition.primary.getValue();
-        Monetary b2 = newPosition.secondary.getValue();
-
-        Monetary c1 = a1.signum() * b1.signum() == -1 ?
-                Monetary.min(a1.abs(), b1.abs()) : Monetary.ZERO;
-        c1 = a1.signum() == -1 ? c1.negate() : c1; // faster than direct multiplying
-        Monetary c2 = a1.isZero() ? a2 : c1.multiply((a2.divide(a1)));
-
-        Monetary d1 = c1.negate();
-        Monetary d2 = b1.isZero() ? b2 : d1.multiply(b2.divide(b1));
-
-        // e1 is always zero
-        Monetary e2 = c2.add(d2);
-
-        Monetary sigma = a1.abs().compareTo(b1.abs()) > 0 ? Monetary.ONE.negate() : Monetary.ONE;
-        Monetary f1 = a1.add(b1);
-//        Monetary f2 = c1.isZero() ? a2.add(b2) : b2.subtract(d2.multiply(sigma));
-        Monetary f2 = a1.signum() * b1.signum() == 1 ? a2.add(b2) :
-                sigma.isNegative() ? a2.subtract(c2) : b2.subtract(d2);
-
-        Position position = new Position(
-                new Money(f1, primary.getAsset()),
-                new Money(f2, secondary.getAsset()));
-        position.setProfitLoss(e2);
-        return position;
-    }
-*/
 
   def merge(that: Position): Pair[Option[Position], Money] = {
 
@@ -129,20 +92,27 @@ object PositionSide extends Enumeration {
 }
 
 abstract class Portfolio extends Serializable {
-  def <<(position: Position): Pair[StrictPortfolio, Money]
+
+  def positions: Iterable[Position]
+
+  def positions(instrument: Instrument): Iterable[Position]
+
+  def <<(position: Position): (Portfolio, Money)
 
   def amount(instrument: Instrument): Decimal
 
-  def profitLossIn(asset: Asset, market: Market): Option[Money]
+  def profitLoss(asset: Asset, market: Market): Option[Money]
 
-  def profitLoss(market: Market) = profitLossIn(market.pivot, market)
+  def profitLoss(market: Market): Option[Money] = profitLoss(market.pivot, market)
 }
 
-class StrictPortfolio(private val map: Map[Instrument, Position] = Map()) extends Portfolio {
+class StrictPortfolio protected (val map: Map[Instrument, Position]) extends Portfolio {
 
-  val positions = map.values
+  def this() = this(Map())
+  
+  lazy val positions = map.values
 
-  def <<(newPosition: Position): Pair[StrictPortfolio, Money] = {
+  def <<(newPosition: Position): (StrictPortfolio, Money) = {
     val oldPosition = map.get(newPosition.instrument)
     val (pos, profitLoss) = oldPosition match {
       case Some(p) => p merge newPosition
@@ -155,6 +125,11 @@ class StrictPortfolio(private val map: Map[Instrument, Position] = Map()) extend
     (new StrictPortfolio(newMap), profitLoss)
   }
 
+  def positions(instrument: Instrument): Iterable[Position] = position(instrument) match {
+    case Some(pos) => List(pos)
+    case None => List()
+  }
+
   def position(instrument: Instrument): Option[Position] = map.get(instrument)
 
   def amount(instrument: Instrument): Decimal = map.get(instrument) match {
@@ -162,7 +137,7 @@ class StrictPortfolio(private val map: Map[Instrument, Position] = Map()) extend
     case Some(position) => position.primary.amount
   }
 
-  def profitLossIn(asset: Asset, market: Market): Option[Money] = {
+  def profitLoss(asset: Asset, market: Market): Option[Money] = {
     // I believe this can be done better
     val plValues = positions.map(_.profitLossIn(asset, market))
     if (plValues.exists(_.isEmpty)) None else
@@ -172,3 +147,45 @@ class StrictPortfolio(private val map: Map[Instrument, Position] = Map()) extend
   def size = map.size
 }
 
+class NonStrictPortfolio protected (private val aggregates: Map[Instrument, Position],
+                                    private val details: Map[Instrument, Map[UUID, Position]])
+        extends StrictPortfolio(aggregates) {
+
+  def this() = this(Map(), Map())
+
+  override lazy val positions: Iterable[Position] = details.flatMap(_._2.values)
+
+  override def positions(instrument: Instrument): Iterable[Position] =
+    details.getOrElse(instrument, Map[UUID, Position]()).values
+
+  override def <<(newPosition: Position): (NonStrictPortfolio, Money) = {
+
+    val strict = super.<<(newPosition)._1
+
+    def putOrReplacePosition(instrument: Instrument, uuid: UUID, p: Option[Position]): NonStrictPortfolio = {
+      val byInstrument = details.getOrElse(instrument, Map[UUID, Position]())
+      val newDetails = p match {
+        case Some(pos) => details + (instrument -> (byInstrument + (uuid -> pos)))
+        case None => details + (instrument -> (byInstrument - uuid))
+      }
+      new NonStrictPortfolio(strict.map, newDetails)
+    }
+
+    newPosition.matchUuid match {
+      case Some(uuid) => {
+        val oldPosition = for (byInstrument <- details.get(newPosition.instrument);
+                               p <- byInstrument.get(uuid)) yield p
+        oldPosition match {
+          case Some(position) => {
+            val result = position merge newPosition
+            (putOrReplacePosition(newPosition.instrument, uuid, result._1), result._2)
+          }
+          case None => throw new NoSuchElementException("No matching position found: " + uuid)
+        }
+      }
+      case None => {
+        (putOrReplacePosition(newPosition.instrument, newPosition.uuid, Some(newPosition)), Zilch)
+      }
+    }
+  }
+}

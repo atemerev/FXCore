@@ -9,50 +9,9 @@ import com.miriamlaurel.fxcore.numbers._
  * @author Alexander Temerev
  */
 
-/*
-    public @Before void init() {
-        account = new Account(Money.of("100000 CHF"));
-        account.setName("test");
-        market = new Market("USD");
-        quote("EUR/USD", "1.3000", "1.3050");
-        quote("USD/CHF", "1.2000", "1.2050");
-        quote("USD/JPY", "125.00", "125.50");
-        account.setMarket(market);
-    }
-
-    public @Test void testJpy() throws Exception {
-        Position opening = new Position(USD_JPY, new Monetary("125.50"), new Monetary("500000"));
-        opening.setId(id++);
-        opening.lockPosition(market, account.getAccountingAsset());
-        opening.setAccountId(account.getId());
-        Position processed = account.processPosition(opening);
-        Assert.assertEquals("Positions size should be 1", 1, account.getAllPositionsMap().size());
-        Position opened = account.getAllPositionsMap().values().iterator().next();
-        Assert.assertNotNull("First opened position must not be null", opened);
-        Assert.assertEquals("Processed and opened positions should be equal", processed, opened);
-        Assert.assertEquals(Money.of("-250000 JPY"), opened.profitLoss(market));
-        Position closing = new Position(USD_JPY, new Monetary("125.00"), new Monetary("-500000"));
-        closing.lockPosition(market, account.getAccountingAsset());
-        closing.setAccountId(account.getId());
-        closing.setId(opening.getId());
-        account.processPosition(closing);
-        Assert.assertEquals(Money.of("97590 CHF"), account.getBalance());
-    }
-
-    public @Test void testChfJpy() throws Exception {
-        quote("EUR/USD", "1.4430", "1.4432");
-        quote("USD/CHF", "1.1529", "1.1532");
-        quote("USD/JPY", "113.265", "113.29");
-        Monetary ask = market.getPrice(CurrencyAsset.getInstance("CHF"),
-                CurrencyAsset.getInstance("JPY"),
-                QuoteSide.BID).getValue();
-        Assert.assertEquals(new Monetary("98.218"), ask.setScale(3));
-    }
-
- */
-
 class AccountingTest extends FixtureFunSuite with ShouldMatchers {
-  type FixtureParam = (Market, StrictPortfolio)
+
+  type FixtureParam = Market
 
   def withFixture(test: OneArgTest) {
     val market = Market(
@@ -60,8 +19,7 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
       lane("USD/CHF", "1.2000", "1.2050"),
       lane("USD/JPY", "125.00", "125.50")
     )
-    val portfolio = new StrictPortfolio
-    test((market, portfolio))
+    test(market)
   }
 
   test("Conversion") {
@@ -77,9 +35,8 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
   }
 
   test("USD/JPY accounting") {
-    fixture => {
-      val (market, portfolio) = fixture
-      var p: StrictPortfolio = portfolio
+    market => {
+      var p = new StrictPortfolio
       val opening = new Position(CurrencyPair("USD/JPY"), Decimal("125.50"), Decimal("500000"))
       p = (p << opening)._1
       val q = market.bestQuote(CurrencyPair("USD/JPY")).get
@@ -90,9 +47,8 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
   }
 
   test("Merge subtract") {
-    fixture => {
-      val (market, portfolio) = fixture
-      var pf: StrictPortfolio = portfolio
+    market => {
+      var pf: StrictPortfolio = new StrictPortfolio
       val p1 = new Position(CurrencyPair("GBP/USD"), Decimal(2), Decimal(1000))
       val p2 = new Position(CurrencyPair("GBP/USD"), Decimal(3), Decimal(-300))
       val r = (p1 merge p2)._1.get
@@ -105,6 +61,28 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
       pl should equal(Decimal(300))
     }
   }
+
+/*
+  test("Non-strict portfolio") {
+    market => {
+      var portfolio = new NonStrictPortfolio
+      val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
+      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
+      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(2000))
+      portfolio = portfolio << p1
+      portfolio = portfolio << p2
+      portfolio.balance should equal(Money("0 USD"))
+      portfolio.positions(eurUsd).size should equal(2)
+      val pc1 = new Position(eurUsd, Decimal("1.3000"), Decimal(-1000), p1.uuid)
+      val pc2 = new Position(eurUsd, Decimal("1.3000"), Decimal(-2000), p2.uuid)
+      portfolio = portfolio << pc1
+      portfolio = portfolio << pc2
+      portfolio.positions(eurUsd).size should equal(0)
+      portfolio.balance should equal(Money("-25 USD"))
+    }
+  }
+*/
+
 
   def lane(instrument: String, bid: String, ask: String) =
     Lane(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
