@@ -29,14 +29,15 @@ class Offer(val id: String,
   override def compare(that: Offer) = price compare (that price)
 }
 
+sealed abstract class OfferSide
+
 object OfferSide extends Enumeration {
   val Bid, Ask = Value
 
-  def open(value: OrderSide.Value) = if (value == OrderSide.Buy) Ask else Bid
-  def close(value: OrderSide.Value) = if (value == OrderSide.Buy) Bid else Ask
+  def reverse(side: OfferSide.Value): OfferSide.Value = side match {
+    case Bid => Ask
+    case Ask => Bid
+  }
 }
 
-object OrderSide extends Enumeration {
-  val Buy, Sell = Value
-}
 

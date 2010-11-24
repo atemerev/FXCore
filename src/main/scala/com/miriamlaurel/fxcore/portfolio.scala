@@ -2,21 +2,25 @@ package com.miriamlaurel.fxcore
 
 import com.miriamlaurel.fxcore.pipscaler._
 import scala.math._
-import java.util.UUID
 import com.miriamlaurel.fxcore.numbers._
 import java.io.Serializable
+import java.util.{Date, UUID}
 
 
 /**
  * @author Alexander Temerev
  */
-class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = null) extends Entity {
+class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = null, timestamp: Date = new Date())
+        extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
+
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID, timestamp: Date) =
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
 
   val matchUuid: Option[UUID] = if (matching != null) Some(matching) else None
 
@@ -51,6 +55,10 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
     case cp: CurrencyPair => asPips(cp, (price - this.price) * primary.amount.signum)
     case _ => throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
   }
+
+  def profitLossPips(market: Market): Option[Decimal] = for (q <- market.quote(instrument, amount);
+                                                             s = PositionSide.close(side);
+                                                             p <- q(s)) yield profitLossPips(p)
 
   def merge(that: Position): Pair[Option[Position], Money] = {
 
@@ -89,10 +97,24 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
 
 object PositionSide extends Enumeration {
   val Long, Short = Value
+
+  def open(side: PositionSide.Value): OfferSide.Value = side match {
+    case Long => OfferSide.Ask
+    case Short => OfferSide.Bid
+  }
+
+  def close(side: PositionSide.Value): OfferSide.Value = side match {
+    case Long => OfferSide.Bid
+    case Short => OfferSide.Ask
+  }
+
+  def reverse(side: PositionSide.Value): PositionSide.Value = side match {
+    case Long => Short
+    case Short => Long
+  }
 }
 
 abstract class Portfolio extends Serializable {
-
   def positions: Iterable[Position]
 
   def positions(instrument: Instrument): Iterable[Position]
@@ -106,10 +128,9 @@ abstract class Portfolio extends Serializable {
   def profitLoss(market: Market): Option[Money] = profitLoss(market.pivot, market)
 }
 
-class StrictPortfolio protected (val map: Map[Instrument, Position]) extends Portfolio {
+class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Portfolio {
+  def this() = this (Map())
 
-  def this() = this(Map())
-  
   lazy val positions = map.values
 
   def <<(newPosition: Position): (StrictPortfolio, Money) = {
@@ -147,11 +168,10 @@ class StrictPortfolio protected (val map: Map[Instrument, Position]) extends Por
   def size = map.size
 }
 
-class NonStrictPortfolio protected (private val aggregates: Map[Instrument, Position],
-                                    private val details: Map[Instrument, Map[UUID, Position]])
+class NonStrictPortfolio protected(private val aggregates: Map[Instrument, Position],
+                                   private val details: Map[Instrument, Map[UUID, Position]])
         extends StrictPortfolio(aggregates) {
-
-  def this() = this(Map(), Map())
+  def this() = this (Map(), Map())
 
   override lazy val positions: Iterable[Position] = details.flatMap(_._2.values)
 
@@ -187,5 +207,21 @@ class NonStrictPortfolio protected (private val aggregates: Map[Instrument, Posi
         (putOrReplacePosition(newPosition.instrument, newPosition.uuid, Some(newPosition)), Zilch)
       }
     }
+  }
+}
+
+class Account(
+        val portfolio: Portfolio,
+        val asset: Asset = CurrencyAsset("USD"),
+        val balance: Money = Zilch,
+        val scale: Int = 2) {
+  def <<(position: Position, market: Market): Option[Account] = {
+    val (newPortfolio, profitLoss) = portfolio << position
+    val closeSide = position.side match {
+      case PositionSide.Long => OfferSide.Bid
+      case PositionSide.Short => OfferSide.Ask
+    }
+    for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
+         newBalance = (balance + converted).setScale(scale)) yield new Account(newPortfolio, asset, newBalance, scale)
   }
 }

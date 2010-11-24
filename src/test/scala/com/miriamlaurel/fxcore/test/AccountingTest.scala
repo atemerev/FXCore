@@ -62,27 +62,42 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
     }
   }
 
-/*
-  test("Non-strict portfolio") {
+  test("Account with non-strict portfolio") {
     market => {
-      var portfolio = new NonStrictPortfolio
+      val portfolio = new NonStrictPortfolio
+      var account = new Account(portfolio)
       val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
       val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
       val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(2000))
-      portfolio = portfolio << p1
-      portfolio = portfolio << p2
-      portfolio.balance should equal(Money("0 USD"))
-      portfolio.positions(eurUsd).size should equal(2)
+      account = (account << (p1, market)).get
+      account = (account << (p2, market)).get
+      account.balance should equal(Money("0 USD"))
+      account.portfolio.positions(eurUsd).size should equal(2)
       val pc1 = new Position(eurUsd, Decimal("1.3000"), Decimal(-1000), p1.uuid)
       val pc2 = new Position(eurUsd, Decimal("1.3000"), Decimal(-2000), p2.uuid)
-      portfolio = portfolio << pc1
-      portfolio = portfolio << pc2
-      portfolio.positions(eurUsd).size should equal(0)
-      portfolio.balance should equal(Money("-25 USD"))
+      account = (account << (pc1, market)).get
+      account.portfolio.positions(eurUsd).size should equal(1)
+      account.balance should equal(Money("-5 USD"))
+      account = (account << (pc2, market)).get
+      account.portfolio.positions(eurUsd).size should equal(0)
+      account.balance should equal(Money("-25 USD"))
+      account = (account << (p1, market)).get
+      account.balance should equal(Money("-25 USD"))
     }
   }
-*/
 
+  test("Equal and opposite positions") {
+    market => {
+      val portfolio = new NonStrictPortfolio
+      var account = new Account(portfolio)
+      val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
+      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
+      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(-1000))
+      account = (account << (p1, market)).get
+      account = (account << (p2, market)).get
+      account.portfolio.positions(eurUsd).size should equal(2)
+    }
+  }
 
   def lane(instrument: String, bid: String, ask: String) =
     Lane(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")

@@ -36,7 +36,7 @@ case object Zilch extends Money {
 case class Monetary(amount: Decimal, asset: Asset) extends Money {
 
   def +(that: Money) = that match {
-    case Zilch => that
+    case Zilch => this
     case m: Monetary => {
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
@@ -45,7 +45,7 @@ case class Monetary(amount: Decimal, asset: Asset) extends Money {
   }
 
   def -(that: Money) = that match {
-    case Zilch => that
+    case Zilch => this
     case m: Monetary => {
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
