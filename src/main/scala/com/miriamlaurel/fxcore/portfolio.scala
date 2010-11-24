@@ -60,7 +60,7 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
                                                              s = PositionSide.close(side);
                                                              p <- q(s)) yield profitLossPips(p)
 
-  def merge(that: Position): Pair[Option[Position], Money] = {
+  def merge(that: Position): (Option[Position], Money) = {
 
     require(this.instrument == that.instrument)
 
@@ -119,7 +119,7 @@ abstract class Portfolio extends Serializable {
 
   def positions(instrument: Instrument): Iterable[Position]
 
-  def <<(position: Position): (Portfolio, Money)
+  def <<(position: Position): (Portfolio, PortfolioEvent)
 
   def amount(instrument: Instrument): Decimal
 
@@ -133,17 +133,20 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
 
   lazy val positions = map.values
 
-  def <<(newPosition: Position): (StrictPortfolio, Money) = {
+  def <<(newPosition: Position): (StrictPortfolio, PortfolioEvent) = {
     val oldPosition = map.get(newPosition.instrument)
     val (pos, profitLoss) = oldPosition match {
       case Some(p) => p merge newPosition
       case None => (Some(newPosition), Money(0, newPosition.secondary.asset))
     }
-    val newMap = pos match {
-      case Some(position) => map + (position.instrument -> position)
-      case None => map - newPosition.instrument
+    val (newMap, event) = pos match {
+      case Some(position) => (map + (position.instrument -> position), oldPosition match {
+        case Some(p) => PositionReplaceEvent(p, position, profitLoss)
+        case None => PositionAddEvent(position)
+      })
+      case None => (map - newPosition.instrument, PositionRemoveEvent(oldPosition.get, profitLoss))
     }
-    (new StrictPortfolio(newMap), profitLoss)
+    (new StrictPortfolio(newMap), event)
   }
 
   def positions(instrument: Instrument): Iterable[Position] = position(instrument) match {
@@ -171,6 +174,7 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
 class NonStrictPortfolio protected(private val aggregates: Map[Instrument, Position],
                                    private val details: Map[Instrument, Map[UUID, Position]])
         extends StrictPortfolio(aggregates) {
+
   def this() = this (Map(), Map())
 
   override lazy val positions: Iterable[Position] = details.flatMap(_._2.values)
@@ -178,7 +182,7 @@ class NonStrictPortfolio protected(private val aggregates: Map[Instrument, Posit
   override def positions(instrument: Instrument): Iterable[Position] =
     details.getOrElse(instrument, Map[UUID, Position]()).values
 
-  override def <<(newPosition: Position): (NonStrictPortfolio, Money) = {
+  override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioEvent) = {
 
     val strict = super.<<(newPosition)._1
 
@@ -198,30 +202,45 @@ class NonStrictPortfolio protected(private val aggregates: Map[Instrument, Posit
         oldPosition match {
           case Some(position) => {
             val result = position merge newPosition
-            (putOrReplacePosition(newPosition.instrument, uuid, result._1), result._2)
+            (putOrReplacePosition(newPosition.instrument, uuid, result._1), result._1 match {
+              case Some(merged) => new PositionReplaceEvent(position, merged, result._2)
+              case None => new PositionRemoveEvent(position, result._2)
+            })
           }
           case None => throw new NoSuchElementException("No matching position found: " + uuid)
         }
       }
       case None => {
-        (putOrReplacePosition(newPosition.instrument, newPosition.uuid, Some(newPosition)), Zilch)
+        (putOrReplacePosition(newPosition.instrument, newPosition.uuid, Some(newPosition)),
+                PositionAddEvent(newPosition))
       }
     }
   }
 }
 
+sealed abstract class PortfolioEvent(val position: Position, val profitLoss: Money)
+
+case class PositionAddEvent(pos: Position) extends PortfolioEvent(pos, Zilch)
+case class PositionRemoveEvent(pos: Position, pl: Money) extends PortfolioEvent(pos, pl)
+case class PositionReplaceEvent(oldPosition: Position, newPosition: Position, pl: Money)
+        extends PortfolioEvent(newPosition, pl)
+
 class Account(
         val portfolio: Portfolio,
         val asset: Asset = CurrencyAsset("USD"),
         val balance: Money = Zilch,
+        val lastEvent: Option[PortfolioEvent] = None,
         val scale: Int = 2) {
+
   def <<(position: Position, market: Market): Option[Account] = {
-    val (newPortfolio, profitLoss) = portfolio << position
+    val (newPortfolio, event) = portfolio << position
+    val profitLoss = event.profitLoss
     val closeSide = position.side match {
       case PositionSide.Long => OfferSide.Bid
       case PositionSide.Short => OfferSide.Ask
     }
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
-         newBalance = (balance + converted).setScale(scale)) yield new Account(newPortfolio, asset, newBalance, scale)
+         newBalance = (balance + converted).setScale(scale))
+              yield new Account(newPortfolio, asset, newBalance, Some(event), scale)
   }
 }
