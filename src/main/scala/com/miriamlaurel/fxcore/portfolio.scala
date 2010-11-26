@@ -9,7 +9,12 @@ import java.util.{Date, UUID}
 /**
  * @author Alexander Temerev
  */
-class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = null, override val timestamp: Date = new Date())
+class Position(val primary: Monetary,
+               val secondary: Monetary,
+               matching: UUID = null,
+               override val timestamp:
+               Date = new Date(),
+               override val uuid: UUID = UUID.randomUUID)
         extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
@@ -20,6 +25,10 @@ class Position(val primary: Monetary, val secondary: Monetary, matching: UUID = 
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID, timestamp: Date) =
     this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
+
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID, timestamp: Date, uuid: UUID) =
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), 
+      matching, timestamp, uuid)
 
   val matchUuid: Option[UUID] = if (matching != null) Some(matching) else None
 
@@ -297,7 +306,23 @@ class Account(
       case PositionSide.Short => OfferSide.Ask
     }
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
-         newBalance = (balance + converted).setScale(scale))
-              yield new Account(newPortfolio, asset, newBalance, Some(diff), scale)
+         newBalance = (balance + converted).setScale(scale);
+         convertedDiff = convertDiff(diff, market))
+              yield new Account(newPortfolio, asset, newBalance, Some(convertedDiff), scale)
+  }
+
+  private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
+    val newActions = diff.actions.map(_ match {
+      case CreateDeal(deal) => CreateDeal(convertDeal(deal, market))
+      case x => x
+    })
+    new PortfolioDiff(newActions: _*)
+  }
+
+  private def convertDeal(deal: Deal, market: Market): Deal = {
+    val rawPl = deal.profitLoss
+    val closeSide = PositionSide.close(deal.position.side)
+    val converted = market.convert(rawPl, this.asset, closeSide, deal.position.amount)
+    new Deal(deal.position, deal.closePrice, deal.closeTimestamp, converted.get)
   }
 }
