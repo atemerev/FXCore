@@ -117,11 +117,11 @@ class Position(val primary: Monetary,
         case Some(remainingPosition) => {
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
-            new PortfolioDiff(ModifyPosition(oldP, this))
+            new PortfolioDiff(RemovePosition(oldP), AddPosition(this))
           else {
             // Otherwise it is partial close -> modify existing position, create partial close deal
             val deal = partialCloseDeal(oldP)
-            new PortfolioDiff(ModifyPosition(oldP, this), CreateDeal(deal))
+            new PortfolioDiff(RemovePosition(oldP), AddPosition(this), CreateDeal(deal))
           }
         }
       }
@@ -198,10 +198,6 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
           require(!(newMap contains p.instrument))
           newMap = newMap + (p.instrument -> p)
         }
-        case ModifyPosition(oldP, newP) => {
-          require(newMap contains oldP.instrument)
-          newMap = newMap + (oldP.instrument -> newP)
-        }
         case RemovePosition(p) => {
           require(newMap contains p.instrument)
           newMap = newMap - p.instrument
@@ -246,13 +242,6 @@ class NonStrictPortfolio protected(private val details: Map[Instrument, Map[UUID
           require(!(byInstrument contains p.uuid))
           newDetails = newDetails + (p.instrument -> (byInstrument + (p.uuid -> p)))
         }
-        case ModifyPosition(oldP, newP) => {
-          val byInstrument = newDetails.getOrElse(oldP.instrument, Map[UUID, Position]())
-          require(byInstrument contains oldP.uuid)
-          require(!(byInstrument contains newP.uuid))
-          newDetails = newDetails + (oldP.instrument -> (byInstrument - oldP.uuid))
-          newDetails = newDetails + (newP.instrument -> (byInstrument + (newP.uuid -> newP)))
-        }
         case RemovePosition(p) => {
           val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
           require(byInstrument contains p.uuid)
@@ -280,7 +269,6 @@ sealed abstract class PortfolioAction(val appliedPosition: Position)
 
 case class AddPosition(position: Position) extends PortfolioAction(position)
 case class RemovePosition(position: Position) extends PortfolioAction(position)
-case class ModifyPosition(oldPosition: Position, newPosition: Position) extends PortfolioAction(newPosition)
 case class CreateDeal(deal: Deal) extends PortfolioAction(deal.position)
 
 class PortfolioDiff(acs: PortfolioAction*) {
