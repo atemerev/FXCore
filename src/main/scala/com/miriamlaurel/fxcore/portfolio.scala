@@ -115,13 +115,16 @@ class Position(val primary: Monetary,
         }
         // If merging produced new position...
         case Some(remainingPosition) => {
+          println("old: " + oldPosition)
+          println("new: " + this)
+          println("merged: " + remainingPosition)
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
-            new PortfolioDiff(RemovePosition(oldP), AddPosition(this))
+            new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
           else {
             // Otherwise it is partial close -> modify existing position, create partial close deal
             val deal = partialCloseDeal(oldP)
-            new PortfolioDiff(RemovePosition(oldP), AddPosition(this), CreateDeal(deal))
+            new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition), CreateDeal(deal))
           }
         }
       }
