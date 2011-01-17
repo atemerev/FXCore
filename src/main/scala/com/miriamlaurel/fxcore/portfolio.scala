@@ -115,9 +115,6 @@ class Position(val primary: Monetary,
         }
         // If merging produced new position...
         case Some(remainingPosition) => {
-          println("old: " + oldPosition)
-          println("new: " + this)
-          println("merged: " + remainingPosition)
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
             new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
