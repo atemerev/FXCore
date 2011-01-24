@@ -73,8 +73,8 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
       account = (account << (p2, market)).get
       account.balance should equal(Money("0 USD"))
       account.portfolio.positions(eurUsd).size should equal(2)
-      val pc1 = new Position(eurUsd, Decimal("1.3000"), Decimal(-1000), p1.uuid)
-      val pc2 = new Position(eurUsd, Decimal("1.3000"), Decimal(-2000), p2.uuid)
+      val pc1 = new Position(eurUsd, Decimal("1.3000"), Decimal(-1000), Some(p1.uuid))
+      val pc2 = new Position(eurUsd, Decimal("1.3000"), Decimal(-2000), Some(p2.uuid))
       account = (account << (pc1, market)).get
       account.portfolio.positions(eurUsd).size should equal(1)
       account.balance should equal(Money("-5 USD"))

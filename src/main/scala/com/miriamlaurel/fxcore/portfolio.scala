@@ -11,7 +11,7 @@ import java.util.{Date, UUID}
  */
 class Position(val primary: Monetary,
                val secondary: Monetary,
-               matching: UUID = null,
+               val matching: Option[UUID] = None,
                override val timestamp:
                Date = new Date(),
                override val uuid: UUID = UUID.randomUUID)
@@ -20,17 +20,15 @@ class Position(val primary: Monetary,
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
     this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID) =
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID]) =
     this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID, timestamp: Date) =
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date) =
     this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: UUID, timestamp: Date, uuid: UUID) =
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date, uuid: UUID) =
     this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), 
       matching, timestamp, uuid)
-
-  val matchUuid: Option[UUID] = if (matching != null) Some(matching) else None
 
   require(primary.amount.signum != secondary.amount.signum)
 
@@ -134,7 +132,7 @@ class Position(val primary: Monetary,
     require(oldPosition.amount != this.amount)
     val closingAmount = (oldPosition.amount min this.amount) * oldPosition.primary.amount.signum
     val closingPart = new Position(oldPosition.instrument, oldPosition.price,
-      closingAmount, oldPosition.uuid, oldPosition.timestamp)
+      closingAmount, Some(oldPosition.uuid), oldPosition.timestamp)
     new Deal(closingPart, this.price, this.timestamp, (oldPosition merge this)._2)
   }
 
@@ -255,7 +253,7 @@ class NonStrictPortfolio protected(private val details: Map[Instrument, Map[UUID
 
   override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
 
-    val oldPosition = newPosition.matchUuid match {
+    val oldPosition = newPosition.matching match {
       case None => None
       case Some(uuid) => for (byInstrument <- details.get(newPosition.instrument);
                               p <- byInstrument.get(uuid)) yield p
