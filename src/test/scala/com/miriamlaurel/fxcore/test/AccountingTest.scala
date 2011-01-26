@@ -99,6 +99,37 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
     }
   }
 
+  test("Portfolio-level position merging") {
+    market => {
+      var portfolio = new NonStrictPortfolio
+      val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
+      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
+      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(1000))
+      val p3 = new Position(eurUsd, Decimal("1.3300"), Decimal(1000))
+      portfolio = (portfolio << p1)._1
+      portfolio = (portfolio << p2)._1
+      portfolio = (portfolio << p3)._1
+      val (newPortfolio, diff) = portfolio.mergePositions(Set(p1.uuid, p2.uuid, p3.uuid))
+      newPortfolio.positions.size should equal(1)
+      val merged = newPortfolio.positions.head
+      merged.amount should equal(Decimal(3000))
+      diff.actions.head.isInstanceOf[MergePositions] should equal(true)
+      val action = diff.actions.head.asInstanceOf[MergePositions]
+      action.result.get.amount should equal(3000)
+      action.result.get.price should equal(Decimal("1.3150"))
+      action.adjustment should equal(Zilch)
+      portfolio = newPortfolio
+      val p4 = new Position(eurUsd, Decimal("1.3100"), Decimal(-1000))
+      portfolio = (portfolio << p4)._1
+      portfolio.positions.size should equal(2)
+      val (newPortfolio2, diff2) = portfolio.mergePositions(Set(merged.uuid, p4.uuid))
+      newPortfolio2.positions.size should equal(1)
+      val merged2 = newPortfolio2.positions.head
+      merged2.amount should equal(Decimal(2000))
+      diff2.actions.head.asInstanceOf[MergePositions].adjustment should equal(Money("-5 USD"))
+    }
+  }
+
   def lane(instrument: String, bid: String, ask: String) =
     Lane(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }

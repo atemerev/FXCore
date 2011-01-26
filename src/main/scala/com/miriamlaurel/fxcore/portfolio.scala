@@ -15,19 +15,19 @@ class Position(val primary: Monetary,
                override val timestamp:
                Date = new Date(),
                override val uuid: UUID = UUID.randomUUID)
-        extends Entity with TimeEvent {
+  extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
+    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID]) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
+    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
+    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date, uuid: UUID) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), 
+    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary),
       matching, timestamp, uuid)
 
   require(primary.amount.signum != secondary.amount.signum)
@@ -93,20 +93,21 @@ class Position(val primary: Monetary,
     val f1: Decimal = a1 + b1
     val f2: Decimal = if (a1.signum * b1.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
 
-    val pos: Option[Position] = if (f1 == 0) None else
+    val pos: Option[Position] = if (f1 == 0) None
+    else
       Some(new Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset)))
     return (pos, Money(e2, secondary.asset))
   }
 
   def diff(oldPosition: Option[Position]): PortfolioDiff = oldPosition match {
-    // If no old position found for this instrument -> add new position
+  // If no old position found for this instrument -> add new position
     case None => new PortfolioDiff(AddPosition(this))
     // If old position is found...
     case Some(oldP) => {
       // Merge old and new positions
       val (merged, profitLoss) = oldP merge this
       merged match {
-        // If merged positions collapsed -> remove old position, add new finished deal
+      // If merged positions collapsed -> remove old position, add new finished deal
         case None => {
           val deal = new Deal(oldP, this.price, this.timestamp, profitLoss)
           new PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
@@ -176,7 +177,8 @@ trait Portfolio {
   def profitLoss(asset: Asset, market: Market): Option[Money] = {
     // I believe this can be done better
     val plValues = this.positions.map(_.profitLossIn(asset, market))
-    if (plValues.exists(_.isEmpty)) None else
+    if (plValues.exists(_.isEmpty)) None
+    else
       Some(Money((for (i <- plValues; v <- i) yield v.amount).foldLeft(Decimal(0))(_ + _), asset))
   }
 
@@ -222,7 +224,7 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
   def size = map.size
 }
 
-class NonStrictPortfolio protected(private val details: Map[Instrument, Map[UUID, Position]]) extends Portfolio {
+class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Position]]) extends Portfolio {
 
   def this() = this (Map())
 
@@ -251,8 +253,37 @@ class NonStrictPortfolio protected(private val details: Map[Instrument, Map[UUID
     new NonStrictPortfolio(newDetails)
   }
 
-  override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
+  def mergePositions(uuids: Set[UUID]): (NonStrictPortfolio, PortfolioDiff) = {
+    val toMerge = positions.filter(position => uuids.contains(position.uuid))
+    if (toMerge.size == 0) (this, new PortfolioDiff())
+    else {
+      require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
+      val instrument = toMerge.head.instrument
+      var merged: Option[Position] = None
+      var adjustment: Money = Zilch
+      toMerge.foreach(position => {
+        merged match {
+          case None => merged = Some(position)
+          case Some(pos) => {
+            val (p, m) = pos.merge(position)
+            merged = p
+            adjustment = adjustment + m
+          }
+        }
+      })
+      var newMap = (details(instrument) -- uuids)
+      merged match {
+        case Some(position) => newMap = newMap + (position.uuid -> position)
+        case None => // do nothing
+      }
+      val newDetails = details + (instrument -> newMap)
+      val newPortfolio = new NonStrictPortfolio(newDetails)
+      val diff = new PortfolioDiff(MergePositions(instrument, toMerge.toSet, merged, adjustment))
+      (newPortfolio, diff)
+    }
+  }
 
+  override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
     val oldPosition = newPosition.matching match {
       case None => None
       case Some(uuid) => for (byInstrument <- details.get(newPosition.instrument);
@@ -266,19 +297,25 @@ class NonStrictPortfolio protected(private val details: Map[Instrument, Map[UUID
 sealed abstract class PortfolioAction(val appliedPosition: Position)
 
 case class AddPosition(position: Position) extends PortfolioAction(position)
+
 case class RemovePosition(position: Position) extends PortfolioAction(position)
+
 case class CreateDeal(deal: Deal) extends PortfolioAction(deal.position)
+
+case class MergePositions(instrument: Instrument, merged: Set[Position], result: Option[Position], adjustment: Money) extends PortfolioAction(null)
 
 class PortfolioDiff(acs: PortfolioAction*) {
   val actions = acs.toList
+
+  def +(action: PortfolioAction) = new PortfolioDiff((action :: this.actions): _*)
 }
 
 class Account(
-        val portfolio: Portfolio,
-        val asset: Asset = CurrencyAsset("USD"),
-        val balance: Money = Zilch,
-        val diff: Option[PortfolioDiff] = None,
-        val scale: Int = 2) {
+               val portfolio: Portfolio,
+               val asset: Asset = CurrencyAsset("USD"),
+               val balance: Money = Zilch,
+               val diff: Option[PortfolioDiff] = None,
+               val scale: Int = 2) {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
@@ -294,8 +331,46 @@ class Account(
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
          newBalance = (balance + converted).setScale(scale);
          convertedDiff = convertDiff(diff, market))
-              yield new Account(newPortfolio, asset, newBalance, Some(convertedDiff), scale)
+    yield new Account(newPortfolio, asset, newBalance, Some(convertedDiff), scale)
   }
+
+  /*
+    def merge(uuids: Set[UUID], market: Market): Option[Account] = {
+      val toMerge = portfolio.positions.filter(position => uuids.contains(position.uuid))
+      require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
+      val instrument = toMerge.head.instrument
+      var merged: Option[Position] = None
+      var adjustment: Money = Zilch
+      try {
+        toMerge.foreach(position => {
+          merged match {
+            case None => merged = Some(position)
+            case Some(pos) => {
+              val (p, m) = pos.merge(position)
+              merged = p
+              val converted = market.convert(m, this.asset, PositionSide.close(position.side), position.amount)
+              converted match {
+                case Some(amount) => adjustment = adjustment + amount
+                case None => throw new ConversionException
+              }
+            }
+          }
+        })
+        var newMap = (portfolio.details(merged.instrument) -- uuids)
+        merged match {
+          case Some(position) => newMap = newMap + (merged.uuid -> merged)
+          case None => // do nothing
+        }
+        val newDetails = portfolio.details + (instrument -> newMap)
+        val newPortfolio = new NonStrictPortfolio(newDetails)
+        val diff = new PortfolioDiff(MergePositions(instrument, toMerge, merged, adjustment))
+        Some(new Account(newPortfolio, this.asset, balance + adjustment, diff, this.scale))
+      }
+      catch {
+        case ConversionException => None
+      }
+    }
+  */
 
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
     val newActions = diff.actions.map(_ match {
@@ -312,3 +387,5 @@ class Account(
     new Deal(deal.position, deal.closePrice, deal.closeTimestamp, converted.get)
   }
 }
+
+class ConversionException extends Exception
