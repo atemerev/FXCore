@@ -1,9 +1,7 @@
 package com.miriamlaurel.fxcore
 
 import com.miriamlaurel.fxcore.pipscaler._
-import scala.math._
 import com.miriamlaurel.fxcore.numbers._
-import java.io.Serializable
 import java.util.{Date, UUID}
 
 /**
@@ -70,6 +68,11 @@ class Position(val primary: Monetary,
   matters (it usually does), one should use .primary.amount
    */
   lazy val amount: Decimal = primary.amount.abs
+
+  /*!
+  Create a reversed position with new price and matching UUID. This can be used efficiently to close a position.
+   */
+  def close(newPrice: Decimal): Position = new Position(instrument, price, -amount, Some(uuid))
 
   /*!
   Position's profit or loss for any price level can be easily calculated, provided it's expressed in position's
@@ -226,8 +229,8 @@ object PositionSide extends Enumeration {
   Reverse the position side.
    */
   def reverse(side: PositionSide.Value): PositionSide.Value = side match {
-    case Long => Short
-    case Short => Long
+    case Long => PositionSide.Short
+    case Short => PositionSide.Long
   }
 }
 
