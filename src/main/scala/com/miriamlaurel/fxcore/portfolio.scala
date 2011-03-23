@@ -72,7 +72,7 @@ class Position(val primary: Monetary,
   /*!
   Create a reversed position with new price and matching UUID. This can be used efficiently to close a position.
    */
-  def close(newPrice: Decimal): Position = new Position(instrument, price, -amount, Some(uuid))
+  def close(newPrice: Decimal): Position = new Position(instrument, price, -primary.amount, Some(uuid))
 
   /*!
   Position's profit or loss for any price level can be easily calculated, provided it's expressed in position's
