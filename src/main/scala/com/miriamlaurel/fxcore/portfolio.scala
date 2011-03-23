@@ -265,7 +265,12 @@ trait Portfolio {
   Total amount of all positions in portfolio (expressed in their primary asset). Not that useful beyond
   forex portfolios, though...
    */
-  def amount(instrument: Instrument): Decimal = this.positions(instrument).map(_.amount).reduceLeft(_ + _)
+  def amount(instrument: Instrument): Decimal = this.positions(instrument).map(_.amount).foldLeft(Decimal(0))(_ + _)
+
+  /*!
+  Non-absolute amount value, collapsing all positions.
+   */
+  def total(instrument: Instrument): Decimal = this.positions(instrument).map(_.primary.amount).foldLeft(Decimal(0))(_ + _)
 
   /*!
   Total profit/loss for all positions in portfolio. Since it can be calculated in any asset (currency), a

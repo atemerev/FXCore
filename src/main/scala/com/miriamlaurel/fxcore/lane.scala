@@ -13,7 +13,7 @@ class Lane(
   override val timestamp: Date) extends TimeEvent with Serializable {
 
   def this(instrument: Instrument, allOffers: List[Offer]) =
-    this(instrument, allOffers, allOffers.map(_.timestamp).reduceLeft(Lane.min(_, _)))
+    this(instrument, allOffers, allOffers.map(_.timestamp).foldLeft(new Date)(Lane.min(_, _)))
 
   lazy val offers = allOffers.sortWith((a, b) => b.price > a.price)
 
