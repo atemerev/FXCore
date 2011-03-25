@@ -436,7 +436,8 @@ case class MergePositions(instrument: Instrument, merged: Set[Position], result:
 /*!#PortfolioDiff
 A diff value is just a list of portfolio actions that can be applied sequentially.
  */
-class PortfolioDiff(acs: PortfolioAction*) {
+class PortfolioDiff(acs: PortfolioAction*) extends Entity {
+
   val actions = acs.toList
 
   def +(action: PortfolioAction) = new PortfolioDiff((action :: this.actions): _*)
