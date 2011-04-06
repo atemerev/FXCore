@@ -39,6 +39,8 @@ class Lane(
   def trim(amount: Decimal): Lane =
     new Lane(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
 
+  def trim(size: Int): Lane = new Lane(instrument, bids.take(size) ++ asks.take(size))
+
   def quote(amount: Decimal): Quote = {
     require(amount >= 0)
     if (amount == 0) bestQuote else {
