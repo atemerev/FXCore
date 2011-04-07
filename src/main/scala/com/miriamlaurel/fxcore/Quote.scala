@@ -19,6 +19,13 @@ class Quote(
 
   def value(side: OfferSide.Value) = if (side == OfferSide.Bid) bid else ask
 
+  def spread: Option[Decimal] = for(b <- bid; a <- ask) yield b - a
+
+  def spreadPips: Option[Decimal] = instrument match {
+    case cp: CurrencyPair => for (s <- spread) yield s / pipValue(cp)
+    case _ => None
+  }
+
   def apply(side: OfferSide.Value): Option[Decimal] = value(side)
 
   def reverse: Quote = {
