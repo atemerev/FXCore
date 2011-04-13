@@ -407,6 +407,11 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
     }
   }
 
+  def profitLossFor(instrument: Instrument, quote: Quote): Option[Money] = {
+    val pls = positions(instrument).map(_.profitLoss(quote))
+    if (pls.find(_.isEmpty).isDefined) None else Some(pls.map(_.get).foldLeft(Zilch: Money)(_ + _))
+  }
+
   override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
     val oldPosition = newPosition.matching match {
       case None => None
