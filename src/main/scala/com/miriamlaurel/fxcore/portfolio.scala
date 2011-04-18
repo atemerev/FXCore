@@ -111,9 +111,13 @@ class Position(val primary: Monetary,
     case _ => throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
   }
 
+  def profitLossPips(quote: Quote): Option[Decimal] = {
+    val s = PositionSide.close(side)
+    for (p <- quote(s)) yield profitLossPips(p)
+  }
+
   def profitLossPips(market: Market): Option[Decimal] = for (q <- market.quote(instrument, amount);
-                                                             s = PositionSide.close(side);
-                                                             p <- q(s)) yield profitLossPips(p)
+                                                             pl <- profitLossPips(q)) yield pl
 
   /*!
   Two positions can be merged, in such a way that:
