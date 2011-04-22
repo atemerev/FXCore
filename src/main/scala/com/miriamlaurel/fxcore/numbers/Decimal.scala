@@ -43,4 +43,6 @@ object Decimal {
   implicit def wrapOptInt(oi: Option[Int]): Option[Decimal] = if (oi.isDefined) Some(Decimal(oi.get)) else None
   implicit def wrapOptLong(ol: Option[Long]): Option[Decimal] = if (ol.isDefined) Some(Decimal(ol.get)) else None
   implicit def wrapString(s: String) = Decimal(s)
+
+  // Implicit unwrapping like Decimal -> Int is dangerous due to precision loss.
 }
