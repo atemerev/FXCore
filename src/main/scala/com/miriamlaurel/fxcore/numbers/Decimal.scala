@@ -19,6 +19,8 @@ class Decimal(bd: java.math.BigDecimal) extends BigDecimal(bd, MathContext.DECIM
   def *(that: Decimal): Decimal = Decimal(super.*(that))
   def /(that: Decimal): Decimal = Decimal(super./(that))
 
+  def %(that: Decimal): Decimal = Decimal(super.%(that))
+
   def min(that: Decimal): Decimal = Decimal(super.min(that))
   def max(that: Decimal): Decimal = Decimal(super.max(that))
   override def abs: Decimal = Decimal(super.abs)
