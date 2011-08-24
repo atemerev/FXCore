@@ -33,7 +33,7 @@ class Lane(
     var enough = false
     val offers = if (side == OfferSide.Bid) bids else asks
     // I'd prefer inclusive takeWhile, but...
-    offers.takeWhile({offer => enough = sum <= amount; sum += offer.amount; enough})
+    offers.takeWhile({offer => enough = sum < amount; sum += offer.amount; enough})
   }
 
   def trim(amount: Decimal): Lane =
@@ -90,9 +90,9 @@ object Lane {
 
   def toCsv(lane: Lane) = {
     lane.timestamp.getTime.toString + "," + lane.instrument.toString + ",BIDS," +
-            lane.bids.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
+            lane.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
             ",ASKS," +
-            lane.asks.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
+            lane.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
   }
 
   private def min(d1: Date, d2: Date) = if (d2.compareTo(d1) >= 0) d1 else d2
