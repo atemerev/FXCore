@@ -48,7 +48,6 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
 
   test("Merge subtract") {
     market => {
-      var pf: StrictPortfolio = new StrictPortfolio
       val p1 = new Position(CurrencyPair("GBP/USD"), Decimal(2), Decimal(1000))
       val p2 = new Position(CurrencyPair("GBP/USD"), Decimal(3), Decimal(-300))
       val r = (p1 merge p2)._1.get

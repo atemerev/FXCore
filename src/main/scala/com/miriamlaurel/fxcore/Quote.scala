@@ -19,7 +19,7 @@ class Quote(
 
   def value(side: OfferSide.Value) = if (side == OfferSide.Bid) bid else ask
 
-  def spread: Option[Decimal] = for(b <- bid; a <- ask) yield b - a
+  def spread: Option[Decimal] = for(b <- bid; a <- ask) yield a - b
 
   def spreadPips: Option[Decimal] = instrument match {
     case cp: CurrencyPair => for (s <- spread) yield s / pipValue(cp)
@@ -45,7 +45,7 @@ class Quote(
   override def hashCode: Int = {
     val bidHash = if (bid.isDefined) bid.hashCode else 0;
     val askHash = if (ask.isDefined) ask.hashCode else 0;
-    return 29 * (instrument.hashCode + 29 * (bidHash + 29 * askHash))
+    29 * (instrument.hashCode + 29 * (bidHash + 29 * askHash))
   }
 
   override def equals(obj: Any) = {

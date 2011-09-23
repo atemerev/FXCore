@@ -153,7 +153,7 @@ class Position(val primary: Monetary,
     val pos: Option[Position] = if (f1 == 0) None
     else
       Some(new Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset)))
-    return (pos, Money(e2, secondary.asset))
+    (pos, Money(e2, secondary.asset))
   }
 
   /*!
