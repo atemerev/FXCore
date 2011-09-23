@@ -6,20 +6,14 @@ import java.io.Serializable
 /**
  * @author Alexander Temerev
  */
-abstract class Asset extends Serializable {
+trait Asset extends Serializable {
   def code: String
+  override def toString = code
 }
 
-class CurrencyAsset(val currency: Currency) extends Asset {
+case class CurrencyAsset(currency: Currency) extends Asset {
 
   def code = currency.getCurrencyCode
-
-  override def equals(obj: Any) = obj.isInstanceOf[CurrencyAsset] &&
-          obj.asInstanceOf[CurrencyAsset].currency == currency
-
-  override def hashCode = currency.hashCode
-
-  override def toString = currency.toString
 }
 
 object CurrencyAsset {
@@ -29,9 +23,9 @@ object CurrencyAsset {
   def apply(code: String): CurrencyAsset = {
     if (cache.get(code).isEmpty) {
       val asset = new CurrencyAsset(Currency.getInstance(code))
-      return asset
+      asset
     } else {
-      return cache.get(code).get
+      cache.get(code).get
     }
   }
 }

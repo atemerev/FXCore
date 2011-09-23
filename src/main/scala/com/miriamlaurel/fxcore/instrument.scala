@@ -6,7 +6,7 @@ import java.io.Serializable
 /**
  * @author Alexander Temerev
  */
-abstract class Instrument extends Serializable {
+trait Instrument extends Serializable {
   def primary: Asset
   def secondary: Asset
 
@@ -28,7 +28,7 @@ object Instrument {
     }
 }
 
-class BaseInstrument(val primary: Asset, val secondary: Asset) extends Instrument {
+case class BaseInstrument(primary: Asset, secondary: Asset) extends Instrument {
 
   lazy val toCurrencyPair = new CurrencyPair(primary.asInstanceOf[CurrencyAsset], secondary.asInstanceOf[CurrencyAsset])
 }
@@ -44,7 +44,7 @@ object CurrencyPair {
   def apply(ticker:String):CurrencyPair = {
     require(ticker.contains("/"))
     val tokens = ticker.split("/")
-    return new CurrencyPair(CurrencyAsset(tokens(0)), CurrencyAsset(tokens(1)))
+    CurrencyPair(CurrencyAsset(tokens(0)), CurrencyAsset(tokens(1)))
   }
 }
 

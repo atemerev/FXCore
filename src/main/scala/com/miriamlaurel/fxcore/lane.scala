@@ -7,8 +7,8 @@ import java.io.Serializable
 /**
  * @author Alexander Temerev
  */
-class Lane(
-  val instrument: Instrument,
+case class Lane(
+  instrument: Instrument,
   allOffers: List[Offer],
   override val timestamp: Date) extends TimeEvent with Serializable {
 
@@ -85,7 +85,7 @@ object Lane {
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val offers = bidS.map(n => new Offer("XX", instrument, OfferSide.Bid, Decimal(n._2), Decimal(n._1), ts)) ++
             askS.map(n => new Offer("XX", instrument, OfferSide.Ask, Decimal(n._2), Decimal(n._1), ts))
-    return new Lane(instrument, offers, ts)
+    Lane(instrument, offers, ts)
   }
 
   def toCsv(lane: Lane) = {
