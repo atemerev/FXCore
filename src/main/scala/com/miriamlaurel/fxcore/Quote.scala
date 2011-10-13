@@ -40,3 +40,18 @@ case class Quote(
     new Quote(instrument, nBid, nAsk, timestamp)
   }
 }
+
+object Quote {
+
+  //! Quite fast quote parsing from top-of-the-book lane CSV. No checks at all.
+
+  def fromCsv(csv: String): Quote = {
+    val tokens = csv.split(",")
+    new Quote(
+      CurrencyPair(tokens(1).toLong),
+      Some(Decimal(tokens(3))),
+      Some(Decimal(tokens(6))),
+      new Date(tokens(0).toLong)
+    )
+  }
+}

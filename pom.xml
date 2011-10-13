@@ -6,7 +6,7 @@
     <groupId>com.miriamlaurel</groupId>
     <artifactId>fxcore</artifactId>
     <packaging>jar</packaging>
-    <version>0.2.6</version>
+    <version>0.2.7</version>
     <name>FXCore: Essential Forex Components</name>
     <url>http://www.temerev.com</url>
 
