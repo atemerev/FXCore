@@ -48,7 +48,7 @@ object Quote {
   def fromCsv(csv: String): Quote = {
     val tokens = csv.split(",")
     new Quote(
-      CurrencyPair(tokens(1).toLong),
+      CurrencyPair(tokens(1)),
       Some(Decimal(tokens(3))),
       Some(Decimal(tokens(6))),
       new Date(tokens(0).toLong)
