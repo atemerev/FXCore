@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore
 
-import scala.collection.mutable.Map
+import scala.collection.mutable
 import java.io.Serializable
 
 /**
@@ -15,10 +15,11 @@ trait Instrument extends Serializable {
 
 object Instrument {
 
-  protected val cache = Map[Tuple2[Asset, Asset], Instrument]()
+  protected val cache = mutable.Map[(Asset, Asset), Instrument]()
 
-  def apply(primary: Asset, secondary: Asset): Instrument =
-    if (cache.contains((primary, secondary))) cache((primary, secondary)) else {
+  def apply(primary: Asset, secondary: Asset): Instrument = cache.get((primary, secondary)) match {
+    case Some(instrument) => instrument
+    case None => {
       val instrument = (primary, secondary) match {
         case (a: CurrencyAsset, b: CurrencyAsset) => new CurrencyPair(a, b)
         case _ => new BaseInstrument(primary, secondary)
@@ -26,10 +27,10 @@ object Instrument {
       cache((primary, secondary)) = instrument
       instrument
     }
+  }
 }
 
 case class BaseInstrument(primary: Asset, secondary: Asset) extends Instrument {
-
   lazy val toCurrencyPair = new CurrencyPair(primary.asInstanceOf[CurrencyAsset], secondary.asInstanceOf[CurrencyAsset])
 }
 
@@ -47,4 +48,3 @@ object CurrencyPair {
     CurrencyPair(CurrencyAsset(tokens(0)), CurrencyAsset(tokens(1)))
   }
 }
-

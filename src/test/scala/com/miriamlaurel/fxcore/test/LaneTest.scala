@@ -18,6 +18,6 @@ class LaneTest extends FunSuite with ShouldMatchers {
 
   test("quote to a limit should respect trimming rules") {
     lane.quote(1) should equal (lane.bestQuote)
-    lane.quote(2000000) should equal (new Quote(lane.instrument, Some(Decimal("1.25225")), Some(Decimal("1.25243")), lane.timestamp))
+    lane.quote(2000000) should equal (Quote(lane.instrument, Some(Decimal("1.25225")), Some(Decimal("1.25243")), lane.timestamp))
   }
 }

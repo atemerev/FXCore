@@ -2,11 +2,7 @@ package com.miriamlaurel.fxcore
 
 import com.miriamlaurel.fxcore.pipscaler._
 import com.miriamlaurel.fxcore.numbers._
-import java.util.{Date, UUID}
-
-/**
- * @author: Alexander Temerev; temerev@miriamlaurel.com
- */
+import java.util.UUID
 
 /*!# Position
 This is the implementation of a position taken in some asset against the other. For example, it can be
@@ -19,26 +15,25 @@ Thus, a position has following fields:
   with matching position, these positions will be merged;
 * timestamp: position's creation time;
 * uuid: this position's UUID.
-
- */
+*/
 class Position(val primary: Monetary,
                val secondary: Monetary,
                val matching: Option[UUID] = None,
-               override val timestamp: Date = new Date(),
+               override val timestamp: Long = System.currentTimeMillis(),
                override val uuid: UUID = UUID.randomUUID)
   extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID]) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long) =
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Date, uuid: UUID) =
-    this (Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary),
+  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long, uuid: UUID) =
+    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary),
       matching, timestamp, uuid)
 
   /*!
@@ -204,7 +199,7 @@ class Position(val primary: Monetary,
 /*!
 A deal is a closed position, with fixed ("realized") profit/loss.
  */
-class Deal(val position: Position, val closePrice: Decimal, val closeTimestamp: Date, val profitLoss: Money)
+case class Deal(position: Position, closePrice: Decimal, closeTimestamp: Long, profitLoss: Money)
 
 
 /*!

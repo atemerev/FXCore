@@ -1,31 +1,31 @@
 package com.miriamlaurel.fxcore
 
-import java.util.Date
 import scala.math.max
 import com.miriamlaurel.fxcore.numbers.{Monetary, Zilch, Money, Decimal}
-import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) extends Serializable {
+class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) {
 
-  val quotesMap = Map[Instrument, Lane](lanes.map(l => (l.instrument, l)): _*)
+  private val booksMap = Map[Instrument, Lane](lanes.map(l => (l.instrument, l)): _*)
 
-  def apply(instrument: Instrument): Lane = quotesMap(instrument)
+  lazy val timestamp = lanes.map(_.timestamp).max
 
-  def lane(instrument: Instrument): Option[Lane] = quotesMap.get(instrument)
+  def apply(instrument: Instrument): Lane = booksMap(instrument)
+
+  def lane(instrument: Instrument): Option[Lane] = booksMap.get(instrument)
 
   def <<(lane: Lane): Market = {
-    val newMap = quotesMap + (lane.instrument -> lane)
+    val newMap = booksMap + (lane.instrument -> lane)
     new Market(newMap.values.toSeq)
   }
 
   def quote(instrument: Instrument, amount: Decimal): Option[Quote] = {
     if (instrument.primary == instrument.secondary)
-      Some(new Quote(instrument, Some(1), Some(1), new Date)) else
-    if (quotesMap.contains(instrument)) Some(apply(instrument).quote(amount)) else
-    if (quotesMap.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse) else
+      Some(Quote(instrument, Some(1), Some(1), timestamp)) else
+    if (booksMap.contains(instrument)) Some(apply(instrument).quote(amount)) else
+    if (booksMap.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse) else {
       for (a <- quoteToPivot(instrument.primary);
            b <- quoteToPivot(instrument.secondary);
            x <- Some(if (isReverse(a.instrument)) a.reverse else a);
@@ -36,9 +36,8 @@ class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) 
            bAsk <- y.ask;
            bid <- Some(aBid * bBid);
            ask <- Some(aAsk * bAsk)
-      ) yield {
-        new Quote(instrument, Some(bid), Some(ask), new Date(max(a.timestamp.getTime, b.timestamp.getTime)))
-      }
+      ) yield Quote(instrument, Some(bid), Some(ask), max(a.timestamp, b.timestamp))
+    }
   }
 
   def bestQuote(instrument: Instrument): Option[Quote] = quote(instrument, Decimal(0))

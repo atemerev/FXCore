@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore
 
-import java.util.{Date, UUID}
+import java.util.UUID
 import java.io.Serializable
 
 /**
@@ -14,11 +14,9 @@ trait Entity extends Serializable {
     case _ => false
   }
 
-  override def hashCode = uuid.hashCode
+  override def hashCode = uuid.hashCode()
 }
 
 trait TimeEvent {
-  val timestamp: Date = new Date
+  val timestamp: Long = System.currentTimeMillis()
 }
-
-case object OK

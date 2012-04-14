@@ -1,8 +1,8 @@
 package com.miriamlaurel.fxcore
 
-import java.util.Date
 import com.miriamlaurel.fxcore.numbers.Decimal
 import java.io.Serializable
+import java.util.UUID
 
 /**
  * @author Alexander Temerev
@@ -10,10 +10,10 @@ import java.io.Serializable
 case class Lane(
   instrument: Instrument,
   allOffers: List[Offer],
-  override val timestamp: Date) extends TimeEvent with Serializable {
+  override val timestamp: Long) extends TimeEvent with Serializable {
 
   def this(instrument: Instrument, allOffers: List[Offer]) =
-    this(instrument, allOffers, allOffers.map(_.timestamp).foldLeft(new Date)(Lane.min(_, _)))
+    this(instrument, allOffers, allOffers.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))
 
   lazy val offers = allOffers.sortWith((a, b) => b.price > a.price)
 
@@ -23,10 +23,9 @@ case class Lane(
   private lazy val bestBid = if (bids.size > 0) Some(bids(0).price) else None
   private lazy val bestAsk = if (asks.size > 0) Some(asks(0).price) else None
 
-  val bestQuote = new Quote(instrument, bestBid, bestAsk, timestamp)
+  lazy val bestQuote = Quote(instrument, bestBid, bestAsk, timestamp)
 
-  def selectSource(source: String) =
-    new Lane(instrument, offers.filter(_.source == source))
+  def selectSource(source: String): Lane = Lane(instrument, offers.filter(_.source == source), timestamp)
 
   def slice(side: OfferSide.Value, amount: Decimal): List[Offer] = {
     var sum = Decimal(0)
@@ -37,7 +36,7 @@ case class Lane(
   }
 
   def trim(amount: Decimal): Lane =
-    new Lane(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
+    Lane(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
 
   def trim(size: Int): Lane = new Lane(instrument, bids.take(size) ++ asks.take(size))
 
@@ -48,20 +47,15 @@ case class Lane(
       val sliceAsk = slice(OfferSide.Ask, amount)
       val bid = if (sliceBid.size > 0) Some(weightedAvg(sliceBid)) else None
       val ask = if (sliceAsk.size > 0) Some(weightedAvg(sliceAsk)) else None
-      new Quote(instrument, bid, ask, timestamp)
+      Quote(instrument, bid, ask, timestamp)
     }
   }
 
-  def apply(id: String) = offers.find(_.id == id)
+  def apply(uuid: UUID) = offers.find(_.uuid == uuid)
 
-  def -(id: String) = new Lane(instrument, offers.filter(_.id != id), timestamp)
+  def -(uuid: UUID) = Lane(instrument, offers.filter(_.uuid != uuid), timestamp)
 
-  def +(offer: Offer): Lane = new Lane(instrument, offers.filterNot(offers.filter(_.id == offer.id) contains), timestamp)
-
-  def ++(lane: Lane): Lane = {
-    val ms = Set[String]()
-    new Lane(instrument, offers.foldLeft(List[Offer]())((a, b) => if (ms contains b.id) a else b :: a), timestamp)
-  }
+  def +(offer: Offer): Lane = Lane(instrument, offers.filterNot(offers.filter(_.uuid == offer.uuid) contains), timestamp)
 
   override def toString = Lane.toCsv(this)
 
@@ -78,24 +72,20 @@ object Lane {
   def fromCsv(csv: String): Lane = {
     def pair[A](l: List[A]): List[(A, A)] = l.grouped(2).collect {case List(a, b) => (a, b)}.toList
     val tokens = csv.split(",")
-    val ts = new Date(tokens(0).toLong)
+    val ts = tokens(0).toLong
     val instrument = CurrencyPair(tokens(1))
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
-    val offers = bidS.map(n => new Offer("XX", instrument, OfferSide.Bid, Decimal(n._2), Decimal(n._1), ts)) ++
-            askS.map(n => new Offer("XX", instrument, OfferSide.Ask, Decimal(n._2), Decimal(n._1), ts))
+    val offers = bidS.map(n => new Offer("XX", instrument, OfferSide.Bid, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts)) ++
+            askS.map(n => new Offer("XX", instrument, OfferSide.Ask, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts))
     Lane(instrument, offers, ts)
   }
 
   def toCsv(lane: Lane) = {
-    lane.timestamp.getTime.toString + "," + lane.instrument.toString + ",BIDS," +
+    lane.timestamp.toString + "," + lane.instrument.toString + ",BIDS," +
             lane.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
             ",ASKS," +
             lane.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
   }
-
-  private def min(d1: Date, d2: Date) = if (d2.compareTo(d1) >= 0) d1 else d2
-
-  private def max(d1: Date, d2: Date) = if (d2.compareTo(d1) < 0) d2 else d1
 }
