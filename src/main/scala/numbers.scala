@@ -36,6 +36,10 @@ class Decimal(bd: java.math.BigDecimal) extends BigDecimal(bd, MathContext.DECIM
 
 object Decimal {
 
+  implicit object Ord extends Ordering[Decimal] {
+    def compare(x: Decimal, y: Decimal) = x compare y
+  }
+
   def apply(bd: BigDecimal) = new Decimal(bd)
   def apply(s: String) = new Decimal(s)
   def apply(i: Int) = new Decimal(i)

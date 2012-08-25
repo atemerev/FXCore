@@ -20,12 +20,14 @@ case class Lane(
   lazy val bids = offers.filter(_.side == OfferSide.Bid).reverse
   lazy val asks = offers.filter(_.side == OfferSide.Ask)
 
-  private lazy val bestBid = if (bids.size > 0) Some(bids(0).price) else None
-  private lazy val bestAsk = if (asks.size > 0) Some(asks(0).price) else None
+  lazy val bestBid: Option[Decimal] = if (bids.size > 0) Some(bids(0).price) else None
+  lazy val bestAsk: Option[Decimal] = if (asks.size > 0) Some(asks(0).price) else None
 
   lazy val bestQuote = Quote(instrument, bestBid, bestAsk, timestamp)
 
   def selectSource(source: String): Lane = Lane(instrument, offers.filter(_.source == source), timestamp)
+
+  def isFull: Boolean = bids.size > 0 && asks.size > 0
 
   def slice(side: OfferSide.Value, amount: Decimal): List[Offer] = {
     var sum = Decimal(0)

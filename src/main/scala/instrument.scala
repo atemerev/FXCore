@@ -22,7 +22,7 @@ object Instrument {
     case None => {
       val instrument = (primary, secondary) match {
         case (a: CurrencyAsset, b: CurrencyAsset) => new CurrencyPair(a, b)
-        case _ => new BaseInstrument(primary, secondary)
+        case _ => throw new IllegalArgumentException("Instrument structure not recognized")
       }
       cache((primary, secondary)) = instrument
       instrument
@@ -30,7 +30,7 @@ object Instrument {
   }
 }
 
-case class BaseInstrument(primary: Asset, secondary: Asset) extends Instrument {
+abstract class BaseInstrument(primary: Asset, secondary: Asset) extends Instrument {
   lazy val toCurrencyPair = new CurrencyPair(primary.asInstanceOf[CurrencyAsset], secondary.asInstanceOf[CurrencyAsset])
 }
 

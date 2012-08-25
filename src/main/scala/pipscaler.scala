@@ -33,10 +33,12 @@ package object pipscaler {
 
   def scalePips(v: Decimal, cp: CurrencyPair): Decimal = rescale(v, pipScale(cp))
 
+  def scalePips(v: Decimal, instrument: Instrument): Decimal = scalePips(v, instrument.asInstanceOf[CurrencyPair])
+
   def pretty(scale: Int, v: Decimal):String = {
     val fmt = new DecimalFormat()
     fmt.setMinimumFractionDigits(0)
     fmt.setMaximumFractionDigits(scale)
-    return fmt.format(v.doubleValue)
+    fmt.format(v.doubleValue())
   }
 }
