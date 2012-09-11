@@ -30,7 +30,7 @@ case class Quote(
   lazy val reverse: Quote = {
     val rBid = for (a <- ask) yield a.reciprocal
     val rAsk = for (b <- bid) yield b.reciprocal
-    Quote(instrument.reverse, rBid, rAsk, timestamp)
+    Quote(instrument.asInstanceOf[CurrencyPair].reverse, rBid, rAsk, timestamp)
   }
 
   def normalize(fractionDigits: Int): Quote = {

@@ -9,11 +9,7 @@ import com.miriamlaurel.fxcore.numbers.Decimal
  */
 package object pipscaler {
 
-  private val XAU_USD = CurrencyPair("XAU/USD")
-
-  def pipScale(cp: CurrencyPair) = {
-    if (cp == XAU_USD) 0 else cp.secondary.currency.getDefaultFractionDigits + 2
-  }
+  def pipScale(cp: CurrencyPair) = cp.counter.pointScale + 2
 
   def pipValue(cp: CurrencyPair) = Decimal(pow(10, -pipScale(cp)))
 

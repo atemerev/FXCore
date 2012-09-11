@@ -24,16 +24,16 @@ class Position(val primary: Monetary,
   extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary))
+    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID]) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching)
+    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching)
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary), matching, timestamp)
+    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching, timestamp)
 
   def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long, uuid: UUID) =
-    this(Monetary(amount, instrument.primary), Monetary(-amount * price, instrument.secondary),
+    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter),
       matching, timestamp, uuid)
 
   /*!
@@ -91,7 +91,7 @@ class Position(val primary: Monetary,
   position's secondary asset to desired asset. A Market instance is required for that; if conversion can't
   be done for whatever reason, None is returned.
    */
-  def profitLossIn(asset: Asset, market: Market): Option[Money] = {
+  def profitLossIn(asset: AssetClass, market: Market): Option[Money] = {
     for (q <- market.quote(instrument, amount);
          raw <- profitLoss(q);
          side = if (raw.amount >= 0) OfferSide.Bid else OfferSide.Ask;
@@ -275,7 +275,7 @@ trait Portfolio {
   Total profit/loss for all positions in portfolio. Since it can be calculated in any asset (currency), a
   Market instance is required.
    */
-  def profitLoss(asset: Asset, market: Market): Option[Money] = {
+  def profitLoss(asset: AssetClass, market: Market): Option[Money] = {
     val plValues = this.positions.map(_.profitLossIn(asset, market))
     if (plValues.exists(_.isEmpty)) None
     else
@@ -451,7 +451,7 @@ class ConversionException extends Exception
 
 class Account(
                val portfolio: Portfolio,
-               val asset: Asset = CurrencyAsset("USD"),
+               val asset: AssetClass = Currency("USD"),
                val balance: Money = Zilch,
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2) {

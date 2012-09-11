@@ -6,7 +6,7 @@ import com.miriamlaurel.fxcore.numbers.{Monetary, Zilch, Money, Decimal}
 /**
  * @author Alexander Temerev
  */
-class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) {
+class Market(lanes: Seq[Lane], val pivot: Currency = Currency("USD")) {
 
   private val booksMap = Map[Instrument, Lane](lanes.map(l => (l.instrument, l)): _*)
 
@@ -22,12 +22,12 @@ class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) 
   }
 
   def quote(instrument: Instrument, amount: Decimal): Option[Quote] = {
-    if (instrument.primary == instrument.secondary)
+    if (instrument.base == instrument.counter)
       Some(Quote(instrument, Some(1), Some(1), timestamp)) else
     if (booksMap.contains(instrument)) Some(apply(instrument).quote(amount)) else
     if (booksMap.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse) else {
-      for (a <- quoteToPivot(instrument.primary);
-           b <- quoteToPivot(instrument.secondary);
+      for (a <- quoteToPivot(instrument.base);
+           b <- quoteToPivot(instrument.counter);
            x <- Some(if (isReverse(a.instrument)) a.reverse else a);
            y <- Some(if (isStraight(b.instrument)) b.reverse else b);
            aBid <- x.bid;
@@ -43,7 +43,7 @@ class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) 
   def bestQuote(instrument: Instrument): Option[Quote] = quote(instrument, Decimal(0))
 
   def convert(from: Money,
-              to: Asset,
+              to: AssetClass,
               side: OfferSide.Value,
               amount: Decimal = 0): Option[Money] = from match {
       case Zilch => Some(Zilch)
@@ -51,16 +51,16 @@ class Market(lanes: Seq[Lane], val pivot: CurrencyAsset = CurrencyAsset("USD")) 
          p <- q.apply(side)) yield Money(p * m.amount, to)
   }
 
-  private def quoteToPivot(asset: Asset): Option[Quote] = {
+  private def quoteToPivot(asset: AssetClass): Option[Quote] = {
     val straight = Instrument(asset, pivot)
     val reverse = Instrument(pivot, asset)
     if (lane(straight).isDefined) Some(apply(straight).bestQuote) else
     if (lane(reverse).isDefined) Some(apply(reverse).bestQuote) else None
   }
 
-  private def isStraight(instrument: Instrument) = pivot == instrument.secondary
+  private def isStraight(instrument: Instrument) = pivot == instrument.counter
 
-  private def isReverse(instrument: Instrument) = pivot == instrument.primary
+  private def isReverse(instrument: Instrument) = pivot == instrument.base
 }
 
 object Market {

@@ -1,7 +1,7 @@
 package com.miriamlaurel.fxcore.numbers
 
 import java.math.MathContext
-import com.miriamlaurel.fxcore.{CurrencyAsset, Asset}
+import com.miriamlaurel.fxcore.{Currency, AssetClass}
 
 /**
  * @author Alexander Temerev
@@ -86,7 +86,7 @@ case object Zilch extends Money {
   override def toString = "0"
 }
 
-case class Monetary(amount: Decimal, asset: Asset) extends Money {
+case class Monetary(amount: Decimal, asset: AssetClass) extends Money {
 
   def +(that: Money) = that match {
     case Zilch => this
@@ -128,9 +128,9 @@ case class Monetary(amount: Decimal, asset: Asset) extends Money {
 }
 
 object Money {
-  def apply(amount: Decimal, asset: Asset): Money = if (amount == 0) Zilch else Monetary(amount, asset)
+  def apply(amount: Decimal, asset: AssetClass): Money = if (amount == 0) Zilch else Monetary(amount, asset)
   def apply(s: String):Money = {
     val tokens = s.split(" ")
-    apply(Decimal(tokens(0)), CurrencyAsset(tokens(1)))
+    apply(Decimal(tokens(0)), Currency(tokens(1)))
   }
 }

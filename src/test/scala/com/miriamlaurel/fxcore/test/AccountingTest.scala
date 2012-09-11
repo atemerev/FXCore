@@ -1,7 +1,7 @@
 package com.miriamlaurel.fxcore.test
 
 import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.fixture.FixtureFunSuite
+import org.scalatest.fixture.FunSuite
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.numbers._
 
@@ -9,7 +9,7 @@ import com.miriamlaurel.fxcore.numbers._
  * @author Alexander Temerev
  */
 
-class AccountingTest extends FixtureFunSuite with ShouldMatchers {
+class AccountingTest extends FunSuite with ShouldMatchers {
 
   type FixtureParam = Market
 
@@ -30,7 +30,7 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
         lane("USD/JPY", "113.265", "113.29")
         )
       market.bestQuote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3) should equal(Decimal("98.218"))
-      market.convert(Money("1 CHF"), CurrencyAsset("JPY"), OfferSide.Bid).get.setScale(3) should equal(Money("98.218 JPY")) 
+      market.convert(Money("1 CHF"), Currency("JPY"), OfferSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
     }
   }
 
@@ -41,8 +41,8 @@ class AccountingTest extends FixtureFunSuite with ShouldMatchers {
       p = (p << opening)._1
       val q = market.bestQuote(CurrencyPair("USD/JPY")).get
       opening.profitLoss(q).get should equal(Money("-250000 JPY"))
-      opening.profitLossIn(CurrencyAsset("USD"), market).get should equal(Money("-2000 USD"))
-      opening.profitLossIn(CurrencyAsset("CHF"), market).get should equal(Money("-2410 CHF"))
+      opening.profitLossIn(Currency("USD"), market).get should equal(Money("-2000 USD"))
+      opening.profitLossIn(Currency("CHF"), market).get should equal(Money("-2410 CHF"))
     }
   }
 

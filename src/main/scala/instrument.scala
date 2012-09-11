@@ -1,50 +1,48 @@
 package com.miriamlaurel.fxcore
 
-import scala.collection.mutable
-import java.io.Serializable
-
 /**
  * @author Alexander Temerev
  */
-trait Instrument extends Serializable {
-  def primary: Asset
-  def secondary: Asset
-
-  def reverse = Instrument(secondary, primary)
+trait Instrument {
+  def base: AssetClass
+  def counter: AssetClass
+  def reverse: Instrument = Instrument(counter, base)
 }
 
 object Instrument {
-
-  protected val cache = mutable.Map[(Asset, Asset), Instrument]()
-
-  def apply(primary: Asset, secondary: Asset): Instrument = cache.get((primary, secondary)) match {
-    case Some(instrument) => instrument
-    case None => {
-      val instrument = (primary, secondary) match {
-        case (a: CurrencyAsset, b: CurrencyAsset) => new CurrencyPair(a, b)
-        case _ => throw new IllegalArgumentException("Instrument structure not recognized")
-      }
-      cache((primary, secondary)) = instrument
-      instrument
-    }
+  def apply(base: AssetClass, counter: AssetClass) = (base, counter) match {
+    case (b: Currency, c: Currency) => CurrencyPair(b, c)
+    case (b: Metal, c: Currency) => MetalInstrument(b, c)
+    case _ => throw new IllegalArgumentException("Asset classes not recognized: %s to %s".format(
+      base.getClass.getSimpleName, counter.getClass.getSimpleName))
   }
+
+  // Poor man's dependent types...
+
+  def apply(base: Currency, counter: Currency): CurrencyPair = apply(base.asInstanceOf[AssetClass], counter.asInstanceOf[AssetClass]).asInstanceOf[CurrencyPair]
+  def apply(base: Metal, counter: Currency): MetalInstrument = apply(base.asInstanceOf[AssetClass], counter.asInstanceOf[AssetClass]).asInstanceOf[MetalInstrument]
 }
 
-abstract class BaseInstrument(primary: Asset, secondary: Asset) extends Instrument {
-  lazy val toCurrencyPair = new CurrencyPair(primary.asInstanceOf[CurrencyAsset], secondary.asInstanceOf[CurrencyAsset])
-}
+case class CurrencyPair(override val base: Currency, override val counter: Currency)
+        extends Instrument {
 
-case class CurrencyPair(override val primary: CurrencyAsset, override val secondary: CurrencyAsset)
-        extends BaseInstrument(primary, secondary) {
-
-  override def toString = primary.toString + "/" + secondary.toString
+  override def toString = base.toString + "/" + counter.toString
 }
 
 object CurrencyPair {
-
-  def apply(ticker:String):CurrencyPair = {
+  def apply(ticker: String): CurrencyPair = {
     require(ticker.contains("/"))
     val tokens = ticker.split("/")
-    CurrencyPair(CurrencyAsset(tokens(0)), CurrencyAsset(tokens(1)))
+    CurrencyPair(Currency(tokens(0)), Currency(tokens(1)))
+  }
+}
+
+case class MetalInstrument(override val base: Metal, override val counter: Currency) extends Instrument
+
+object MetalInstrument {
+  def apply(ticker: String): MetalInstrument = {
+    require(ticker.contains("/"))
+    val tokens = ticker.split("/")
+    MetalInstrument(Metal(tokens(0)), Currency(tokens(1)))
   }
 }

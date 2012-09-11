@@ -1,31 +1,46 @@
 package com.miriamlaurel.fxcore
 
-import java.util.Currency
 import java.io.Serializable
 
 /**
  * @author Alexander Temerev
  */
-trait Asset extends Serializable {
+trait AssetClass extends Serializable {
   def code: String
   override def toString = code
 }
 
-case class CurrencyAsset(currency: Currency) extends Asset {
-
-  def code = currency.getCurrencyCode
+case class Currency(code: String) extends AssetClass {
+  def pointScale: Int = java.util.Currency.getInstance(code) match {
+    case c: java.util.Currency => c.getDefaultFractionDigits
+    case null => 2
+  }
 }
 
-object CurrencyAsset {
+trait Metal extends AssetClass
 
-  val cache = Map[String, CurrencyAsset]()
+case object Gold extends Metal {
+  val code = "XAU"
+}
 
-  def apply(code: String): CurrencyAsset = {
-    if (cache.get(code).isEmpty) {
-      val asset = new CurrencyAsset(Currency.getInstance(code))
-      asset
-    } else {
-      cache.get(code).get
-    }
+case object Silver extends Metal {
+  val code = "XAG"
+}
+
+case object Platinum extends Metal {
+  val code = "XPT"
+}
+
+case object Palladium extends Metal {
+  val code = "XPD"
+}
+
+object Metal {
+  def apply(code: String): Metal = code match {
+    case "XAU" => Gold
+    case "XAG" => Silver
+    case "XPT" => Platinum
+    case "XPD" => Palladium
+    case _     => throw new IllegalArgumentException("Metal code is not recognized: " + code)
   }
 }
