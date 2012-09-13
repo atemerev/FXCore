@@ -15,9 +15,9 @@ class AccountingTest extends FunSuite with ShouldMatchers {
 
   def withFixture(test: OneArgTest) {
     val market = Market(
-      lane("EUR/USD", "1.3000", "1.3050"),
-      lane("USD/CHF", "1.2000", "1.2050"),
-      lane("USD/JPY", "125.00", "125.50")
+      snapshot("EUR/USD", "1.3000", "1.3050"),
+      snapshot("USD/CHF", "1.2000", "1.2050"),
+      snapshot("USD/JPY", "125.00", "125.50")
     )
     test(market)
   }
@@ -25,11 +25,11 @@ class AccountingTest extends FunSuite with ShouldMatchers {
   test("Conversion") {
     () => {
       val market = Market(
-        lane("EUR/USD", "1.4430", "1.4432"),
-        lane("USD/CHF", "1.1529", "1.1532"),
-        lane("USD/JPY", "113.265", "113.29")
+        snapshot("EUR/USD", "1.4430", "1.4432"),
+        snapshot("USD/CHF", "1.1529", "1.1532"),
+        snapshot("USD/JPY", "113.265", "113.29")
         )
-      market.bestQuote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3) should equal(Decimal("98.218"))
+      market.quote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3) should equal(Decimal("98.218"))
       market.convert(Money("1 CHF"), Currency("JPY"), OfferSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
     }
   }
@@ -39,7 +39,7 @@ class AccountingTest extends FunSuite with ShouldMatchers {
       var p = new StrictPortfolio
       val opening = new Position(CurrencyPair("USD/JPY"), Decimal("125.50"), Decimal("500000"))
       p = (p << opening)._1
-      val q = market.bestQuote(CurrencyPair("USD/JPY")).get
+      val q = market.quote(CurrencyPair("USD/JPY")).get
       opening.profitLoss(q).get should equal(Money("-250000 JPY"))
       opening.profitLossIn(Currency("USD"), market).get should equal(Money("-2000 USD"))
       opening.profitLossIn(Currency("CHF"), market).get should equal(Money("-2410 CHF"))
@@ -129,6 +129,6 @@ class AccountingTest extends FunSuite with ShouldMatchers {
     }
   }
 
-  def lane(instrument: String, bid: String, ask: String) =
-    Lane(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
+  def snapshot(instrument: String, bid: String, ask: String) =
+    Snapshot(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }

@@ -1,31 +1,32 @@
 package com.miriamlaurel.fxcore
 
 import scala.math.max
+import com.miriamlaurel.fxcore.currencies._
 import com.miriamlaurel.fxcore.numbers.{Monetary, Zilch, Money, Decimal}
 
 /**
  * @author Alexander Temerev
  */
-class Market(lanes: Seq[Lane], val pivot: Currency = Currency("USD")) {
+case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
 
-  private val booksMap = Map[Instrument, Lane](lanes.map(l => (l.instrument, l)): _*)
+  private val content = Map[Instrument, Snapshot](snapshots.map(l => (l.instrument, l)): _*)
 
-  lazy val timestamp = lanes.map(_.timestamp).max
+  lazy val timestamp = snapshots.map(_.timestamp).max
 
-  def apply(instrument: Instrument): Lane = booksMap(instrument)
+  def apply(instrument: Instrument): Snapshot = content(instrument)
 
-  def lane(instrument: Instrument): Option[Lane] = booksMap.get(instrument)
+  def snapshot(instrument: Instrument): Option[Snapshot] = content.get(instrument)
 
-  def <<(lane: Lane): Market = {
-    val newMap = booksMap + (lane.instrument -> lane)
-    new Market(newMap.values.toSeq)
+  def <<(snapshot: Snapshot): Market = {
+    val newContent = content + (snapshot.instrument -> snapshot)
+    Market(newContent.values.toSeq)
   }
 
-  def quote(instrument: Instrument, amount: Decimal): Option[Quote] = {
+  def quote(instrument: Instrument, amount: Decimal = 0): Option[Quote] = {
     if (instrument.base == instrument.counter)
       Some(Quote(instrument, Some(1), Some(1), timestamp)) else
-    if (booksMap.contains(instrument)) Some(apply(instrument).quote(amount)) else
-    if (booksMap.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse) else {
+    if (content.contains(instrument)) Some(apply(instrument).quote(amount)) else
+    if (content.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse) else {
       for (a <- quoteToPivot(instrument.base);
            b <- quoteToPivot(instrument.counter);
            x <- Some(if (isReverse(a.instrument)) a.reverse else a);
@@ -40,8 +41,6 @@ class Market(lanes: Seq[Lane], val pivot: Currency = Currency("USD")) {
     }
   }
 
-  def bestQuote(instrument: Instrument): Option[Quote] = quote(instrument, Decimal(0))
-
   def convert(from: Money,
               to: AssetClass,
               side: OfferSide.Value,
@@ -54,8 +53,8 @@ class Market(lanes: Seq[Lane], val pivot: Currency = Currency("USD")) {
   private def quoteToPivot(asset: AssetClass): Option[Quote] = {
     val straight = Instrument(asset, pivot)
     val reverse = Instrument(pivot, asset)
-    if (lane(straight).isDefined) Some(apply(straight).bestQuote) else
-    if (lane(reverse).isDefined) Some(apply(reverse).bestQuote) else None
+    if (snapshot(straight).isDefined) Some(apply(straight).bestQuote) else
+    if (snapshot(reverse).isDefined) Some(apply(reverse).bestQuote) else None
   }
 
   private def isStraight(instrument: Instrument) = pivot == instrument.counter
@@ -64,5 +63,5 @@ class Market(lanes: Seq[Lane], val pivot: Currency = Currency("USD")) {
 }
 
 object Market {
-  def apply(lanes: Lane*) = new Market(lanes)
+  def apply(snapshots: Snapshot*): Market = Market(snapshots.toSeq)
 }

@@ -7,7 +7,7 @@ import java.util.UUID
 /**
  * @author Alexander Temerev
  */
-case class Lane(
+case class Snapshot(
   instrument: Instrument,
   allOffers: List[Offer],
   override val timestamp: Long) extends TimeEvent with Serializable {
@@ -25,7 +25,7 @@ case class Lane(
 
   lazy val bestQuote = Quote(instrument, bestBid, bestAsk, timestamp)
 
-  def selectSource(source: String): Lane = Lane(instrument, offers.filter(_.source == source), timestamp)
+  def selectSource(source: String): Snapshot = Snapshot(instrument, offers.filter(_.source == source), timestamp)
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
@@ -37,10 +37,10 @@ case class Lane(
     offers.takeWhile({offer => enough = sum < amount; sum += offer.amount; enough})
   }
 
-  def trim(amount: Decimal): Lane =
-    Lane(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
+  def trim(amount: Decimal): Snapshot =
+    Snapshot(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
 
-  def trim(size: Int): Lane = new Lane(instrument, bids.take(size) ++ asks.take(size))
+  def trim(size: Int): Snapshot = new Snapshot(instrument, bids.take(size) ++ asks.take(size))
 
   def quote(amount: Decimal): Quote = {
     require(amount >= 0)
@@ -55,11 +55,11 @@ case class Lane(
 
   def apply(uuid: UUID) = offers.find(_.uuid == uuid)
 
-  def -(uuid: UUID) = Lane(instrument, offers.filter(_.uuid != uuid), timestamp)
+  def -(uuid: UUID) = Snapshot(instrument, offers.filter(_.uuid != uuid), timestamp)
 
-  def +(offer: Offer): Lane = Lane(instrument, offers.filterNot(offers.filter(_.uuid == offer.uuid) contains), timestamp)
+  def +(offer: Offer): Snapshot = Snapshot(instrument, offers.filterNot(offers.filter(_.uuid == offer.uuid) contains), timestamp)
 
-  override def toString = Lane.toCsv(this)
+  override def toString = Snapshot.toCsv(this)
 
   private def weightedAvg(offers: List[Offer]): Decimal =
     offers.map(offer => offer.price * offer.amount).reduceLeft(_ + _) /
@@ -67,11 +67,11 @@ case class Lane(
 
 }
 
-object Lane {
+object Snapshot {
 
   def apply(s: String) = fromCsv(s)
 
-  def fromCsv(csv: String): Lane = {
+  def fromCsv(csv: String): Snapshot = {
     def pair[A](l: List[A]): List[(A, A)] = l.grouped(2).collect {case List(a, b) => (a, b)}.toList
     val tokens = csv.split(",")
     val ts = tokens(0).toLong
@@ -81,13 +81,13 @@ object Lane {
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val offers = bidS.map(n => new Offer("XX", instrument, OfferSide.Bid, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts)) ++
             askS.map(n => new Offer("XX", instrument, OfferSide.Ask, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts))
-    Lane(instrument, offers, ts)
+    Snapshot(instrument, offers, ts)
   }
 
-  def toCsv(lane: Lane) = {
-    lane.timestamp.toString + "," + lane.instrument.toString + ",BIDS," +
-            lane.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
+  def toCsv(snapshot: Snapshot) = {
+    snapshot.timestamp.toString + "," + snapshot.instrument.toString + ",BIDS," +
+            snapshot.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
             ",ASKS," +
-            lane.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
+            snapshot.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
   }
 }
