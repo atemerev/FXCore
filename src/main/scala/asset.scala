@@ -1,11 +1,9 @@
 package com.miriamlaurel.fxcore
 
-import java.io.Serializable
-
 /**
  * @author Alexander Temerev
  */
-trait AssetClass extends Serializable {
+trait AssetClass {
   def code: String
   override def toString = code
 }

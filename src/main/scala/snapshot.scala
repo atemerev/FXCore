@@ -10,7 +10,7 @@ import java.util.UUID
 case class Snapshot(
   instrument: Instrument,
   allOffers: List[Offer],
-  override val timestamp: Long) extends TimeEvent with Serializable {
+  override val timestamp: Long) extends TimeEvent {
 
   def this(instrument: Instrument, allOffers: List[Offer]) =
     this(instrument, allOffers, allOffers.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))

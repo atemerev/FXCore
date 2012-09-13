@@ -6,7 +6,7 @@ import com.miriamlaurel.fxcore.{Currency, AssetClass}
 /**
  * @author Alexander Temerev
  */
-class Decimal(bd: java.math.BigDecimal) extends BigDecimal(bd, MathContext.DECIMAL64) {
+case class Decimal(bd: java.math.BigDecimal) extends BigDecimal(bd, MathContext.DECIMAL64) {
 
   def this(bd: BigDecimal) = this(bd.bigDecimal.stripTrailingZeros)
   def this(s: String) = this(BigDecimal(s, MathContext.DECIMAL64))
@@ -93,7 +93,7 @@ case class Monetary(amount: Decimal, asset: AssetClass) extends Money {
     case m: Monetary => {
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
-      if (sum == 0) Zilch else new Monetary(sum, asset)
+      if (sum == 0) Zilch else Monetary(sum, asset)
     }
   }
 
@@ -102,19 +102,19 @@ case class Monetary(amount: Decimal, asset: AssetClass) extends Money {
     case m: Monetary => {
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
-      if (diff == null) Zilch else new Monetary(diff, asset)
+      if (diff == null) Zilch else Monetary(diff, asset)
     }
   }
 
-  def *(that: Decimal) = if (that == 0) Zilch else new Monetary(amount * that, asset)
+  def *(that: Decimal) = if (that == 0) Zilch else Monetary(amount * that, asset)
 
-  def /(that: Decimal) = new Monetary(this.amount / that, asset)
+  def /(that: Decimal) = Monetary(this.amount / that, asset)
 
   def setScale(scale: Int) = Money(amount.setScale(scale), asset)
 
-  def unary_- = new Monetary(-amount, asset)
+  def unary_- = Monetary(-amount, asset)
 
-  def abs = new Monetary(amount.abs, asset)
+  def abs = Monetary(amount.abs, asset)
 
   def compare(that: Money) = that match {
     case Zilch => if (amount > 0) 1 else -1
