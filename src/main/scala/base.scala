@@ -17,6 +17,6 @@ trait Entity extends Serializable {
   override def hashCode = uuid.hashCode()
 }
 
-trait TimeEvent {
+trait TimeEvent extends Serializable {
   val timestamp: Long = System.currentTimeMillis()
 }
