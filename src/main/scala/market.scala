@@ -43,7 +43,7 @@ case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
 
   def convert(from: Money,
               to: AssetClass,
-              side: OfferSide.Value,
+              side: QuoteSide.Value,
               amount: Decimal = 0): Option[Money] = from match {
       case Zilch => Some(Zilch)
       case m: Monetary => for (q <- quote(Instrument(m.asset, to), amount);
@@ -53,8 +53,8 @@ case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
   private def quoteToPivot(asset: AssetClass): Option[Quote] = {
     val straight = Instrument(asset, pivot)
     val reverse = Instrument(pivot, asset)
-    if (snapshot(straight).isDefined) Some(apply(straight).bestQuote) else
-    if (snapshot(reverse).isDefined) Some(apply(reverse).bestQuote) else None
+    if (snapshot(straight).isDefined) Some(apply(straight).best) else
+    if (snapshot(reverse).isDefined) Some(apply(reverse).best) else None
   }
 
   private def isStraight(instrument: Instrument) = pivot == instrument.counter

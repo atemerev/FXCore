@@ -17,7 +17,7 @@ class SnapshotTest extends FunSuite with ShouldMatchers {
   }
 
   test("quote to a limit should respect trimming rules") {
-    snapshot.quote(1) should equal (snapshot.bestQuote)
+    snapshot.quote(1) should equal (snapshot.best)
     snapshot.quote(2000000) should equal (Quote(snapshot.instrument, Some(Decimal("1.25225")), Some(Decimal("1.25243")), snapshot.timestamp))
   }
 }

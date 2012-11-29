@@ -1,7 +1,6 @@
 package com.miriamlaurel.fxcore
 
 import com.miriamlaurel.fxcore.numbers.Decimal
-import java.io.Serializable
 import java.util.UUID
 
 /**
@@ -17,36 +16,36 @@ case class Snapshot(
 
   lazy val offers = allOffers.sortWith((a, b) => b.price > a.price)
 
-  lazy val bids = offers.filter(_.side == OfferSide.Bid).reverse
-  lazy val asks = offers.filter(_.side == OfferSide.Ask)
+  lazy val bids = offers.filter(_.side == QuoteSide.Bid).reverse
+  lazy val asks = offers.filter(_.side == QuoteSide.Ask)
 
   lazy val bestBid: Option[Decimal] = if (bids.size > 0) Some(bids(0).price) else None
   lazy val bestAsk: Option[Decimal] = if (asks.size > 0) Some(asks(0).price) else None
 
-  lazy val bestQuote = Quote(instrument, bestBid, bestAsk, timestamp)
+  lazy val best = Quote(instrument, bestBid, bestAsk, timestamp)
 
-  def selectSource(source: String): Snapshot = Snapshot(instrument, offers.filter(_.source == source), timestamp)
+  def selectSource(source: Party): Snapshot = Snapshot(instrument, offers.filter(_.source == source), timestamp)
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
-  def slice(side: OfferSide.Value, amount: Decimal): List[Offer] = {
+  def slice(side: QuoteSide.Value, amount: Decimal): List[Offer] = {
     var sum = Decimal(0)
     var enough = false
-    val offers = if (side == OfferSide.Bid) bids else asks
+    val offers = if (side == QuoteSide.Bid) bids else asks
     // I'd prefer inclusive takeWhile, but...
     offers.takeWhile({offer => enough = sum < amount; sum += offer.amount; enough})
   }
 
   def trim(amount: Decimal): Snapshot =
-    Snapshot(instrument, slice(OfferSide.Bid, amount) ::: slice(OfferSide.Ask, amount), timestamp)
+    Snapshot(instrument, slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount), timestamp)
 
   def trim(size: Int): Snapshot = new Snapshot(instrument, bids.take(size) ++ asks.take(size))
 
   def quote(amount: Decimal): Quote = {
     require(amount >= 0)
-    if (amount == 0) bestQuote else {
-      val sliceBid = slice(OfferSide.Bid, amount)
-      val sliceAsk = slice(OfferSide.Ask, amount)
+    if (amount == 0) best else {
+      val sliceBid = slice(QuoteSide.Bid, amount)
+      val sliceAsk = slice(QuoteSide.Ask, amount)
       val bid = if (sliceBid.size > 0) Some(weightedAvg(sliceBid)) else None
       val ask = if (sliceAsk.size > 0) Some(weightedAvg(sliceAsk)) else None
       Quote(instrument, bid, ask, timestamp)
@@ -57,7 +56,8 @@ case class Snapshot(
 
   def -(uuid: UUID) = Snapshot(instrument, offers.filter(_.uuid != uuid), timestamp)
 
-  def +(offer: Offer): Snapshot = Snapshot(instrument, offers.filterNot(offers.filter(_.uuid == offer.uuid) contains), timestamp)
+  def +(offer: Offer): Snapshot = Snapshot(instrument, offers.filterNot(
+    offers.filter(_.uuid == offer.uuid) contains), timestamp)
 
   override def toString = Snapshot.toCsv(this)
 
@@ -79,8 +79,9 @@ object Snapshot {
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
-    val offers = bidS.map(n => new Offer("XX", instrument, OfferSide.Bid, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts)) ++
-            askS.map(n => new Offer("XX", instrument, OfferSide.Ask, Decimal(n._2), Decimal(n._1), UUID.randomUUID(), ts))
+    val offers = bidS.map(
+      n => new Offer(instrument, QuoteSide.Bid, Decimal(n._2), Decimal(n._1), Me, UUID.randomUUID(), ts)) ++
+      askS.map(n => new Offer(instrument, QuoteSide.Ask, Decimal(n._2), Decimal(n._1), Me, UUID.randomUUID(), ts))
     Snapshot(instrument, offers, ts)
   }
 

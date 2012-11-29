@@ -94,7 +94,7 @@ class Position(val primary: Monetary,
   def profitLossIn(asset: AssetClass, market: Market): Option[Money] = {
     for (q <- market.quote(instrument, amount);
          raw <- profitLoss(q);
-         side = if (raw.amount >= 0) OfferSide.Bid else OfferSide.Ask;
+         side = if (raw.amount >= 0) QuoteSide.Bid else QuoteSide.Ask;
          m <- market.convert(raw, asset, side, amount)) yield m
   }
 
@@ -211,17 +211,17 @@ object PositionSide extends Enumeration {
   /*!
   What quote side to use to open a position?
    */
-  def open(side: PositionSide.Value): OfferSide.Value = side match {
-    case Long => OfferSide.Ask
-    case Short => OfferSide.Bid
+  def open(side: PositionSide.Value): QuoteSide.Value = side match {
+    case Long => QuoteSide.Ask
+    case Short => QuoteSide.Bid
   }
 
   /*!
   What quote side to use to close a position?
    */
-  def close(side: PositionSide.Value): OfferSide.Value = side match {
-    case Long => OfferSide.Bid
-    case Short => OfferSide.Ask
+  def close(side: PositionSide.Value): QuoteSide.Value = side match {
+    case Long => QuoteSide.Bid
+    case Short => QuoteSide.Ask
   }
 
   /*!
@@ -464,8 +464,8 @@ class Account(
       deal.profitLoss
     } else Zilch
     val closeSide = position.side match {
-      case PositionSide.Long => OfferSide.Bid
-      case PositionSide.Short => OfferSide.Ask
+      case PositionSide.Long => QuoteSide.Bid
+      case PositionSide.Short => QuoteSide.Ask
     }
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
          newBalance = (balance + converted).setScale(scale);

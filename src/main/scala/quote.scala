@@ -23,9 +23,9 @@ case class Quote(
     case _ => None
   }
 
-  def apply(side: OfferSide.Value): Option[Decimal] = value(side)
+  def apply(side: QuoteSide.Value): Option[Decimal] = value(side)
 
-  def value(side: OfferSide.Value): Option[Decimal] = if (side == OfferSide.Bid) bid else ask
+  def value(side: QuoteSide.Value): Option[Decimal] = if (side == QuoteSide.Bid) bid else ask
 
   lazy val reverse: Quote = {
     val rBid = for (a <- ask) yield a.reciprocal
@@ -37,5 +37,14 @@ case class Quote(
     val nBid = for (b <- bid) yield rescale(b, pipScale(instrument.asInstanceOf[CurrencyPair]) + fractionDigits)
     val nAsk = for (a <- ask) yield rescale(a, pipScale(instrument.asInstanceOf[CurrencyPair]) + fractionDigits)
     Quote(instrument, nBid, nAsk, timestamp)
+  }
+}
+
+object QuoteSide extends Enumeration {
+  val Bid, Ask = Value
+
+  def reverse(side: QuoteSide.Value): QuoteSide.Value = side match {
+    case Bid => Ask
+    case Ask => Bid
   }
 }

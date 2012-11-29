@@ -30,7 +30,7 @@ class AccountingTest extends FunSuite with ShouldMatchers {
         snapshot("USD/JPY", "113.265", "113.29")
         )
       market.quote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3) should equal(Decimal("98.218"))
-      market.convert(Money("1 CHF"), Currency("JPY"), OfferSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
+      market.convert(Money("1 CHF"), Currency("JPY"), QuoteSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
     }
   }
 
