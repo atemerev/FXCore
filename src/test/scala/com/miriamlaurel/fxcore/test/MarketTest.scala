@@ -13,19 +13,19 @@ class MarketTest extends FunSuite with ShouldMatchers {
     val snapshot = Snapshot("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25215,2000000,1.2522,1000000,ASKS,1.25245,2000000,1.25246,1000000")
     val market = Market(snapshot)
     val best = market.quote(CurrencyPair("EUR/USD"))
-    best.get.bid.get should equal(Decimal("1.2522"))
-    best.get.ask.get should equal(Decimal("1.25245"))
+    best.get.bid.get should equal(BigDecimal("1.2522"))
+    best.get.ask.get should equal(BigDecimal("1.25245"))
     val self = market.quote(CurrencyPair("USD/USD"))
-    self.get.bid.get should equal(Decimal(1))
-    self.get.ask.get should equal(Decimal(1))
+    self.get.bid.get should equal(BigDecimal(1))
+    self.get.ask.get should equal(BigDecimal(1))
   }
 
   test("Reverse quote") {
     val snapshot = Snapshot("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25215,2000000,1.2522,1000000,ASKS,1.25245,2000000,1.25246,1000000")
     val market = Market(snapshot)
     val best = market.quote(CurrencyPair("USD/EUR"))
-    best.get.normalize(1).bid.get should equal(Decimal("0.79844"))
-    best.get.normalize(1).ask.get should equal(Decimal("0.79859"))
+    best.get.normalize(1).bid.get should equal(BigDecimal("0.79844"))
+    best.get.normalize(1).ask.get should equal(BigDecimal("0.79859"))
     val unknown = market.quote(CurrencyPair("EUR/CHF"))
     unknown.isDefined should equal(false)
   }
@@ -36,7 +36,7 @@ class MarketTest extends FunSuite with ShouldMatchers {
     val market = Market(eurSnapshot, chfSnapshot)
     val cross = market.quote(CurrencyPair("EUR/CHF"))
     cross.isDefined should equal(true)
-    cross.get.normalize(1).bid.get should equal(Decimal("1.30328"))
-    cross.get.normalize(1).ask.get should equal(Decimal("1.30358"))
+    cross.get.normalize(1).bid.get should equal(BigDecimal("1.30328"))
+    cross.get.normalize(1).ask.get should equal(BigDecimal("1.30358"))
   }
 }

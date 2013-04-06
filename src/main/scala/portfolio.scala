@@ -23,16 +23,16 @@ class Position(val primary: Monetary,
                override val uuid: UUID = UUID.randomUUID)
   extends Entity with TimeEvent {
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID]) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID]) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching, timestamp)
 
-  def this(instrument: Instrument, price: Decimal, amount: Decimal, matching: Option[UUID], timestamp: Long, uuid: UUID) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long, uuid: UUID) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter),
       matching, timestamp, uuid)
 
@@ -50,7 +50,7 @@ class Position(val primary: Monetary,
   /*!
   We can easily calculate a price for 1 unit of primary asset -- it is usually referred as position's price.
    */
-  lazy val price: Decimal = (secondary.amount / primary.amount).abs
+  lazy val price: BigDecimal = (secondary.amount / primary.amount).abs
 
   /*!
   Position can be either long (primary amount is positive) or short (negative). Short positions may be handled
@@ -62,18 +62,18 @@ class Position(val primary: Monetary,
   Position amount is the absolute value of primary asset amount, i.e. it is always positive. If amount sign
   matters (it usually does), one should use .primary.amount
    */
-  lazy val amount: Decimal = primary.amount.abs
+  lazy val amount: BigDecimal = primary.amount.abs
 
   /*!
   Create a reversed position with new price and matching UUID. This can be used efficiently to close a position.
    */
-  def close(newPrice: Decimal): Position = new Position(instrument, newPrice, -primary.amount, Some(uuid))
+  def close(newPrice: BigDecimal): Position = new Position(instrument, newPrice, -primary.amount, Some(uuid))
 
   /*!
   Position's profit or loss for any price level can be easily calculated, provided it's expressed in position's
   secondary asset units.
    */
-  def profitLoss(newPrice: Decimal): Money = {
+  def profitLoss(newPrice: BigDecimal): Money = {
     Money((newPrice - price) * primary.amount, secondary.asset)
   }
 
@@ -101,17 +101,17 @@ class Position(val primary: Monetary,
   /*!
   For currency positions, it may be convenient to express profit/loss value in pips.
    */
-  def profitLossPips(price: Decimal): Decimal = instrument match {
+  def profitLossPips(price: BigDecimal): BigDecimal = instrument match {
     case cp: CurrencyPair => asPips(cp, (price - this.price) * primary.amount.signum)
     case _ => throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
   }
 
-  def profitLossPips(quote: Quote): Option[Decimal] = {
+  def profitLossPips(quote: Quote): Option[BigDecimal] = {
     val s = PositionSide.close(side)
     for (p <- quote(s)) yield profitLossPips(p)
   }
 
-  def profitLossPips(market: Market): Option[Decimal] = for (q <- market.quote(instrument, amount);
+  def profitLossPips(market: Market): Option[BigDecimal] = for (q <- market.quote(instrument, amount);
                                                              pl <- profitLossPips(q)) yield pl
 
   /*!
@@ -135,15 +135,15 @@ class Position(val primary: Monetary,
     val a2 = this.secondary.amount
     val b1 = that.primary.amount
     val b2 = that.secondary.amount
-    val c1: Decimal = (if (a1.signum * b1.signum == -1) a1.abs min b1.abs else Decimal(0)) * a1.signum
-    val c2: Decimal = if (a1 == 0) a2 else c1 * (a2 / a1)
-    val d1: Decimal = -c1
-    val d2: Decimal = if (b1 == 0) b2 else d1 * (b2 / b1)
+    val c1: BigDecimal = (if (a1.signum * b1.signum == -1) a1.abs min b1.abs else BigDecimal(0)) * a1.signum
+    val c2: BigDecimal = if (a1 == 0) a2 else c1 * (a2 / a1)
+    val d1: BigDecimal = -c1
+    val d2: BigDecimal = if (b1 == 0) b2 else d1 * (b2 / b1)
     // e1 is always zero
-    val e2: Decimal = c2 + d2
+    val e2: BigDecimal = c2 + d2
     val sigma = if (a1.abs > b1.abs) -1 else 1
-    val f1: Decimal = a1 + b1
-    val f2: Decimal = if (a1.signum * b1.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
+    val f1: BigDecimal = a1 + b1
+    val f2: BigDecimal = if (a1.signum * b1.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
 
     val pos: Option[Position] = if (f1 == 0) None
     else
@@ -199,7 +199,7 @@ class Position(val primary: Monetary,
 /*!
 A deal is a closed position, with fixed ("realized") profit/loss.
  */
-case class Deal(position: Position, closePrice: Decimal, closeTimestamp: Long, profitLoss: Money)
+case class Deal(position: Position, closePrice: BigDecimal, closeTimestamp: Long, profitLoss: Money)
 
 
 /*!
@@ -264,12 +264,12 @@ trait Portfolio {
   Total amount of all positions in portfolio (expressed in their primary asset). Not that useful beyond
   forex portfolios, though...
    */
-  def amount(instrument: Instrument): Decimal = this.positions(instrument).map(_.amount).foldLeft(Decimal(0))(_ + _)
+  def amount(instrument: Instrument): BigDecimal = this.positions(instrument).map(_.amount).foldLeft(BigDecimal(0))(_ + _)
 
   /*!
   Non-absolute amount value, collapsing all positions.
    */
-  def total(instrument: Instrument): Decimal = this.positions(instrument).map(_.primary.amount).foldLeft(Decimal(0))(_ + _)
+  def total(instrument: Instrument): BigDecimal = this.positions(instrument).map(_.primary.amount).foldLeft(BigDecimal(0))(_ + _)
 
   /*!
   Total profit/loss for all positions in portfolio. Since it can be calculated in any asset (currency), a
@@ -279,7 +279,7 @@ trait Portfolio {
     val plValues = this.positions.map(_.profitLossIn(asset, market))
     if (plValues.exists(_.isEmpty)) None
     else
-      Some(Money((for (i <- plValues; v <- i) yield v.amount).foldLeft(Decimal(0))(_ + _), asset))
+      Some(Money((for (i <- plValues; v <- i) yield v.amount).foldLeft(BigDecimal(0))(_ + _), asset))
   }
 
   /*!

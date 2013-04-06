@@ -1,8 +1,5 @@
 package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.numbers.Decimal
-import java.util.UUID
-
 /**
  * @author Alexander Temerev
  */
@@ -19,8 +16,8 @@ case class Snapshot(
   lazy val bids = offers.filter(_.side == QuoteSide.Bid).reverse
   lazy val asks = offers.filter(_.side == QuoteSide.Ask)
 
-  lazy val bestBid: Option[Decimal] = if (bids.size > 0) Some(bids(0).price) else None
-  lazy val bestAsk: Option[Decimal] = if (asks.size > 0) Some(asks(0).price) else None
+  lazy val bestBid: Option[BigDecimal] = if (bids.size > 0) Some(bids(0).price) else None
+  lazy val bestAsk: Option[BigDecimal] = if (asks.size > 0) Some(asks(0).price) else None
 
   lazy val best = Quote(instrument, bestBid, bestAsk, timestamp)
 
@@ -28,20 +25,20 @@ case class Snapshot(
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
-  def slice(side: QuoteSide.Value, amount: Decimal): List[Offer] = {
-    var sum = Decimal(0)
+  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Offer] = {
+    var sum = BigDecimal(0)
     var enough = false
     val offers = if (side == QuoteSide.Bid) bids else asks
     // I'd prefer inclusive takeWhile, but...
     offers.takeWhile({offer => enough = sum < amount; sum += offer.amount; enough})
   }
 
-  def trim(amount: Decimal): Snapshot =
+  def trim(amount: BigDecimal): Snapshot =
     Snapshot(instrument, slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount), timestamp)
 
   def trim(size: Int): Snapshot = new Snapshot(instrument, bids.take(size) ++ asks.take(size))
 
-  def quote(amount: Decimal): Quote = {
+  def quote(amount: BigDecimal): Quote = {
     require(amount >= 0)
     if (amount == 0) best else {
       val sliceBid = slice(QuoteSide.Bid, amount)
@@ -52,16 +49,11 @@ case class Snapshot(
     }
   }
 
-  def apply(uuid: UUID) = offers.find(_.uuid == uuid)
-
-  def -(uuid: UUID) = Snapshot(instrument, offers.filter(_.uuid != uuid), timestamp)
-
-  def +(offer: Offer): Snapshot = Snapshot(instrument, offers.filterNot(
-    offers.filter(_.uuid == offer.uuid) contains), timestamp)
+  def +(offer: Offer): Snapshot = copy(allOffers = (this.allOffers.::(offer)))
 
   override def toString = Snapshot.toCsv(this)
 
-  private def weightedAvg(offers: List[Offer]): Decimal =
+  private def weightedAvg(offers: List[Offer]): BigDecimal =
     offers.map(offer => offer.price * offer.amount).reduceLeft(_ + _) /
             offers.map(offer => offer.amount).reduceLeft(_ + _)
 
@@ -80,8 +72,8 @@ object Snapshot {
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val offers = bidS.map(
-      n => new Offer(instrument, QuoteSide.Bid, Decimal(n._2), Decimal(n._1), Me, UUID.randomUUID(), ts)) ++
-      askS.map(n => new Offer(instrument, QuoteSide.Ask, Decimal(n._2), Decimal(n._1), Me, UUID.randomUUID(), ts))
+      n => new Offer(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
+      askS.map(n => new Offer(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
     Snapshot(instrument, offers, ts)
   }
 

@@ -29,7 +29,7 @@ class AccountingTest extends FunSuite with ShouldMatchers {
         snapshot("USD/CHF", "1.1529", "1.1532"),
         snapshot("USD/JPY", "113.265", "113.29")
         )
-      market.quote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3) should equal(Decimal("98.218"))
+      market.quote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3, BigDecimal.RoundingMode.HALF_EVEN) should equal(BigDecimal("98.218"))
       market.convert(Money("1 CHF"), Currency("JPY"), QuoteSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
     }
   }
@@ -37,7 +37,7 @@ class AccountingTest extends FunSuite with ShouldMatchers {
   test("USD/JPY accounting") {
     market => {
       var p = new StrictPortfolio
-      val opening = new Position(CurrencyPair("USD/JPY"), Decimal("125.50"), Decimal("500000"))
+      val opening = new Position(CurrencyPair("USD/JPY"), BigDecimal("125.50"), BigDecimal("500000"))
       p = (p << opening)._1
       val q = market.quote(CurrencyPair("USD/JPY")).get
       opening.profitLoss(q).get should equal(Money("-250000 JPY"))
@@ -48,16 +48,16 @@ class AccountingTest extends FunSuite with ShouldMatchers {
 
   test("Merge subtract") {
     market => {
-      val p1 = new Position(CurrencyPair("GBP/USD"), Decimal(2), Decimal(1000))
-      val p2 = new Position(CurrencyPair("GBP/USD"), Decimal(3), Decimal(-300))
+      val p1 = new Position(CurrencyPair("GBP/USD"), BigDecimal(2), BigDecimal(1000))
+      val p2 = new Position(CurrencyPair("GBP/USD"), BigDecimal(3), BigDecimal(-300))
       val r = (p1 merge p2)._1.get
       val r2 = (p2 merge p1)._1.get
       val pl = (p1 merge p2)._2.amount
       r.primary should equal(r2.primary)
       r.secondary should equal(r2.secondary)
-      r.primary.amount should equal(Decimal(700))
-      r.secondary.amount should equal(Decimal(-1400))
-      pl should equal(Decimal(300))
+      r.primary.amount should equal(BigDecimal(700))
+      r.secondary.amount should equal(BigDecimal(-1400))
+      pl should equal(BigDecimal(300))
     }
   }
 
@@ -66,14 +66,14 @@ class AccountingTest extends FunSuite with ShouldMatchers {
       val portfolio = new NonStrictPortfolio
       var account = new Account(portfolio)
       val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
-      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
-      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(2000))
+      val p1 = new Position(eurUsd, BigDecimal("1.3050"), BigDecimal(1000))
+      val p2 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(2000))
       account = (account << (p1, market)).get
       account = (account << (p2, market)).get
       account.balance should equal(Money("0 USD"))
       account.portfolio.positions(eurUsd).size should equal(2)
-      val pc1 = new Position(eurUsd, Decimal("1.3000"), Decimal(-1000), Some(p1.uuid))
-      val pc2 = new Position(eurUsd, Decimal("1.3000"), Decimal(-2000), Some(p2.uuid))
+      val pc1 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.uuid))
+      val pc2 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.uuid))
       account = (account << (pc1, market)).get
       account.portfolio.positions(eurUsd).size should equal(1)
       account.balance should equal(Money("-5 USD"))
@@ -90,8 +90,8 @@ class AccountingTest extends FunSuite with ShouldMatchers {
       val portfolio = new NonStrictPortfolio
       var account = new Account(portfolio)
       val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
-      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
-      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(-1000))
+      val p1 = new Position(eurUsd, BigDecimal("1.3050"), BigDecimal(1000))
+      val p2 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(-1000))
       account = (account << (p1, market)).get
       account = (account << (p2, market)).get
       account.portfolio.positions(eurUsd).size should equal(2)
@@ -102,29 +102,29 @@ class AccountingTest extends FunSuite with ShouldMatchers {
     market => {
       var portfolio = new NonStrictPortfolio
       val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
-      val p1 = new Position(eurUsd, Decimal("1.3050"), Decimal(1000))
-      val p2 = new Position(eurUsd, Decimal("1.3100"), Decimal(1000))
-      val p3 = new Position(eurUsd, Decimal("1.3300"), Decimal(1000))
+      val p1 = new Position(eurUsd, BigDecimal("1.3050"), BigDecimal(1000))
+      val p2 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(1000))
+      val p3 = new Position(eurUsd, BigDecimal("1.3300"), BigDecimal(1000))
       portfolio = (portfolio << p1)._1
       portfolio = (portfolio << p2)._1
       portfolio = (portfolio << p3)._1
       val (newPortfolio, diff) = portfolio.mergePositions(Set(p1.uuid, p2.uuid, p3.uuid))
       newPortfolio.positions.size should equal(1)
       val merged = newPortfolio.positions.head
-      merged.amount should equal(Decimal(3000))
+      merged.amount should equal(BigDecimal(3000))
       diff.actions.head.isInstanceOf[MergePositions] should equal(true)
       val action = diff.actions.head.asInstanceOf[MergePositions]
       action.result.get.amount should equal(3000)
-      action.result.get.price should equal(Decimal("1.3150"))
+      action.result.get.price should equal(BigDecimal("1.3150"))
       action.adjustment should equal(Zilch)
       portfolio = newPortfolio
-      val p4 = new Position(eurUsd, Decimal("1.3100"), Decimal(-1000))
+      val p4 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(-1000))
       portfolio = (portfolio << p4)._1
       portfolio.positions.size should equal(2)
       val (newPortfolio2, diff2) = portfolio.mergePositions(Set(merged.uuid, p4.uuid))
       newPortfolio2.positions.size should equal(1)
       val merged2 = newPortfolio2.positions.head
-      merged2.amount should equal(Decimal(2000))
+      merged2.amount should equal(BigDecimal(2000))
       diff2.actions.head.asInstanceOf[MergePositions].adjustment should equal(Money("-5 USD"))
     }
   }

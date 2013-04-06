@@ -4,8 +4,8 @@ import Keys._
 object BuildSettings {
 
   val buildOrganization = "com.miriamlaurel"
-  val buildVersion      = "0.6.5"
-  val buildScalaVersion = "2.9.2"
+  val buildVersion      = "0.7"
+  val buildScalaVersion = "2.10.1"
 
   val buildSettings = Defaults.defaultSettings ++ Seq (
     organization := buildOrganization,
@@ -13,7 +13,7 @@ object BuildSettings {
     scalaVersion := buildScalaVersion,
     shellPrompt  := ShellPrompt.buildShellPrompt,
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "1.8" % "test"
+      "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     ),
     resolvers ++= Seq(
       "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases"

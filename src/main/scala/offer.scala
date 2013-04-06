@@ -1,21 +1,20 @@
 package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.numbers.Decimal
-import java.util.UUID
-
 /**
  * @author Alexander Temerev
  */
-class Offer(val instrument: Instrument,
-            val side: QuoteSide.Value,
-            val amount: Decimal,
-            val price: Decimal,
-            val source: Party = Me,
-            override val uuid: UUID = UUID.randomUUID(),
-            override val timestamp: Long) extends Ordered[Offer] with Entity with TimeEvent {
+case class Offer(instrument: Instrument,
+            side: QuoteSide.Value,
+            amount: BigDecimal,
+            price: BigDecimal,
+            source: Party = Me,
+            sourceId: Option[String] = None,
+            override val timestamp: Long = System.currentTimeMillis()) extends Ordered[Offer] with TimeEvent {
 
   require(amount > 0)
   require(price > 0)
 
-  override def compare(that: Offer) = price compare (that price)
+  override def compare(that: Offer) = price compare (that.price)
+
+  override def toString = "%s %f %s @%f".format(side.toString, amount.bigDecimal, instrument.toString, price.bigDecimal)
 }
