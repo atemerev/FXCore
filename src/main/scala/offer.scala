@@ -14,7 +14,7 @@ case class Offer(instrument: Instrument,
   require(amount > 0)
   require(price > 0)
 
-  override def compare(that: Offer) = price compare (that.price)
+  override def compare(that: Offer) = price compare that.price
 
   override def toString = "%s %f %s @%f".format(side.toString, amount.bigDecimal, instrument.toString, price.bigDecimal)
 }

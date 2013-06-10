@@ -13,7 +13,7 @@ case class Quote(
 
   val isFull: Boolean = bid.isDefined && ask.isDefined
 
-  lazy val average: Option[BigDecimal] = if (isFull) (Some((bid.get + ask.get) / 2)) else None
+  lazy val average: Option[BigDecimal] = if (isFull) Some((bid.get + ask.get) / 2) else None
 
   lazy val spread: Option[BigDecimal] = for(b <- bid; a <- ask) yield a - b
 

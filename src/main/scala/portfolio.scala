@@ -394,7 +394,7 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
           }
         }
       })
-      var newMap = (details(instrument) -- uuids)
+      var newMap = details(instrument) -- uuids
       merged match {
         case Some(position) => newMap = newMap + (position.uuid -> position)
         case None => // do nothing
@@ -408,7 +408,7 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
 
   def profitLossFor(instrument: Instrument, quote: Quote): Option[Money] = {
     val pls = positions(instrument).map(_.profitLoss(quote))
-    if (pls.find(_.isEmpty).isDefined) None else Some(pls.map(_.get).foldLeft(Zilch: Money)(_ + _))
+    if (pls.exists(_.isEmpty)) None else Some(pls.map(_.get).foldLeft(Zilch: Money)(_ + _))
   }
 
   override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
@@ -444,7 +444,7 @@ class PortfolioDiff(acs: PortfolioAction*) extends Entity {
 
   val actions = acs.toList
 
-  def +(action: PortfolioAction) = new PortfolioDiff((action :: this.actions): _*)
+  def +(action: PortfolioAction) = new PortfolioDiff(action :: this.actions: _*)
 }
 
 class ConversionException extends Exception

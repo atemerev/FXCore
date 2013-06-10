@@ -49,7 +49,7 @@ case class Snapshot(
     }
   }
 
-  def +(offer: Offer): Snapshot = copy(allOffers = (this.allOffers.::(offer)))
+  def +(offer: Offer): Snapshot = copy(allOffers = this.allOffers.::(offer))
 
   override def toString = Snapshot.toCsv(this)
 
