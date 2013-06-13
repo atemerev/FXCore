@@ -11,7 +11,7 @@ class SnapshotTest extends FunSuite with ShouldMatchers {
 
   private val snapshot = Snapshot("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000")
 
-  test("trim should leave minimum amount of best offers totalling greater than trim amount") {
+  test("trim should leave minimum amount of best orders totalling greater than trim amount") {
     "1273787999996,EUR/USD,BIDS,1.2523,1000000,ASKS,1.2524,1000000" should equal (snapshot.trim(BigDecimal(500000)).toString)
   }
 

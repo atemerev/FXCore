@@ -5,32 +5,32 @@ package com.miriamlaurel.fxcore
  */
 case class Snapshot(
   instrument: Instrument,
-  allOffers: List[Offer],
+  allOrders: List[Order],
   override val timestamp: Long) extends TimeEvent {
 
-  def this(instrument: Instrument, allOffers: List[Offer]) =
-    this(instrument, allOffers, allOffers.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))
+  def this(instrument: Instrument, allOrders: List[Order]) =
+    this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))
 
-  lazy val offers = allOffers.sortWith((a, b) => b.price > a.price)
+  lazy val orders = allOrders.sorted
 
-  lazy val bids = offers.filter(_.side == QuoteSide.Bid).reverse
-  lazy val asks = offers.filter(_.side == QuoteSide.Ask)
+  lazy val bids = orders.filter(_.side == QuoteSide.Bid).reverse
+  lazy val asks = orders.filter(_.side == QuoteSide.Ask)
 
   lazy val bestBid: Option[BigDecimal] = if (bids.size > 0) Some(bids(0).price) else None
   lazy val bestAsk: Option[BigDecimal] = if (asks.size > 0) Some(asks(0).price) else None
 
   lazy val best = Quote(instrument, bestBid, bestAsk, timestamp)
 
-  def selectSource(source: Party): Snapshot = Snapshot(instrument, offers.filter(_.source == source), timestamp)
+  def selectSource(source: Party): Snapshot = Snapshot(instrument, orders.filter(_.source == source), timestamp)
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
-  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Offer] = {
+  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = {
     var sum = BigDecimal(0)
     var enough = false
-    val offers = if (side == QuoteSide.Bid) bids else asks
+    val orders = if (side == QuoteSide.Bid) bids else asks
     // I'd prefer inclusive takeWhile, but...
-    offers.takeWhile({offer => enough = sum < amount; sum += offer.amount; enough})
+    orders.takeWhile({order => enough = sum < amount; sum += order.amount; enough})
   }
 
   def trim(amount: BigDecimal): Snapshot =
@@ -49,13 +49,13 @@ case class Snapshot(
     }
   }
 
-  def +(offer: Offer): Snapshot = copy(allOffers = this.allOffers.::(offer))
+  def +(order: Order): Snapshot = copy(allOrders = this.allOrders.::(order))
 
   override def toString = Snapshot.toCsv(this)
 
-  private def weightedAvg(offers: List[Offer]): BigDecimal =
-    offers.map(offer => offer.price * offer.amount).reduceLeft(_ + _) /
-            offers.map(offer => offer.amount).reduceLeft(_ + _)
+  private def weightedAvg(orders: List[Order]): BigDecimal =
+    orders.map(order => order.price * order.amount).reduceLeft(_ + _) /
+            orders.map(_.amount).reduceLeft(_ + _)
 
 }
 
@@ -71,10 +71,10 @@ object Snapshot {
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
-    val offers = bidS.map(
-      n => new Offer(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
-      askS.map(n => new Offer(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
-    Snapshot(instrument, offers, ts)
+    val orders = bidS.map(
+      n => new Order(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
+      askS.map(n => new Order(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
+    Snapshot(instrument, orders, ts)
   }
 
   def toCsv(snapshot: Snapshot) = {
