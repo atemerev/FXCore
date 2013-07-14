@@ -1,5 +1,7 @@
 package com.miriamlaurel.fxcore
 
+import java.util.UUID
+
 /**
  * @author Alexander Temerev
  */
@@ -9,7 +11,8 @@ case class Order(instrument: Instrument,
             price: BigDecimal,
             source: Party = Me,
             sourceId: Option[String] = None,
-            override val timestamp: Long = System.currentTimeMillis()) extends Ordered[Order] with Entity with TimeEvent {
+            override val timestamp: Long = System.currentTimeMillis(),
+            override val uuid: UUID = UUID.randomUUID()) extends Ordered[Order] with Entity with TimeEvent {
 
   require(amount > 0)
   require(price > 0)

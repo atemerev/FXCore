@@ -1,15 +1,15 @@
 package com.miriamlaurel.fxcore.test
 
 import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.fixture.FunSuite
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.numbers._
+import org.scalatest.fixture
 
 /**
  * @author Alexander Temerev
  */
 
-class AccountingTest extends FunSuite with ShouldMatchers {
+class AccountingTest extends fixture.FunSuite with ShouldMatchers {
 
   type FixtureParam = Market
 
