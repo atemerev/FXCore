@@ -6,7 +6,7 @@ import java.io.Serializable
 /**
  * @author Alexander Temerev
  */
-trait Entity extends Serializable {
+trait Entity {
   val uuid: UUID = UUID.randomUUID
 
   override def equals(that: Any): Boolean = that match {
@@ -17,6 +17,6 @@ trait Entity extends Serializable {
   override def hashCode = uuid.hashCode()
 }
 
-trait TimeEvent extends Serializable {
+trait TimeEvent {
   val timestamp: Long = System.currentTimeMillis()
 }
