@@ -455,28 +455,28 @@ class Account(
                val portfolio: Portfolio,
                val asset: AssetClass = Currency("USD"),
                val balance: Money = Zilch,
-               val entries: List[AccountingEntry] = List[AccountingEntry](),
+               val deals: List[Deal] = List[Deal](),
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
                val limit: Int = 50) {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
-    val deals = diff.actions.filter(_.isInstanceOf[CreateDeal])
+    val deals: List[Deal] = diff.actions.filter(_.isInstanceOf[CreateDeal]).asInstanceOf[List[CreateDeal]].map(_.deal)
     val profitLoss = if (deals.size > 0) {
-      val deal = deals(0).asInstanceOf[CreateDeal].deal
+      val deal = deals(0)
       deal.profitLoss
     } else Zilch
     val closeSide = position.side match {
       case PositionSide.Long => QuoteSide.Bid
       case PositionSide.Short => QuoteSide.Ask
     }
-    val entr = entries ++ deals.asInstanceOf[List[CreateDeal]].map(_.deal)
-    val newEntries = if (entr.size > entries.size) entr.drop(entr.size - entries.size) else entr
+    val entr = this.deals ++ deals
+    val newDeals = if (entr.size > limit) entr.drop(limit - deals.size) else entr
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
          newBalance = (balance + converted).setScale(scale);
          convertedDiff = convertDiff(diff, market))
-    yield new Account(newPortfolio, asset, newBalance, newEntries, Some(convertedDiff), scale)
+    yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale)
   }
 
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
