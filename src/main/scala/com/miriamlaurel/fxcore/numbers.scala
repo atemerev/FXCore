@@ -1,11 +1,10 @@
-package com.miriamlaurel.fxcore.numbers
+package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.{Currency, AssetClass}
-
-/**
- * @author Alexander Temerev
- */
 sealed trait Money extends Ordered[Money] {
+
+  val ZERO = BigDecimal(0)
+  val ONE = BigDecimal(1)
+
   def amount: BigDecimal
   def +(that: Money): Money
   def -(that: Money): Money
@@ -17,7 +16,7 @@ sealed trait Money extends Ordered[Money] {
 }
 
 case object Zilch extends Money {
-  val amount: BigDecimal = 0
+  val amount: BigDecimal = ZERO
   def /(that: BigDecimal) = Zilch
   def *(that: BigDecimal) = Zilch
   def -(that: Money) = -that
@@ -37,23 +36,21 @@ case class Monetary(amount: BigDecimal, asset: AssetClass) extends Money {
 
   def +(that: Money) = that match {
     case Zilch => this
-    case m: Monetary => {
+    case m: Monetary =>
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
-      if (sum == 0) Zilch else Monetary(sum, asset)
-    }
+      if (sum == ZERO) Zilch else Monetary(sum, asset)
   }
 
   def -(that: Money) = that match {
     case Zilch => this
-    case m: Monetary => {
+    case m: Monetary =>
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
       if (diff == null) Zilch else Monetary(diff, asset)
-    }
   }
 
-  def *(that: BigDecimal) = if (that == 0) Zilch else Monetary(amount * that, asset)
+  def *(that: BigDecimal) = if (that == ZERO) Zilch else Monetary(amount * that, asset)
 
   def /(that: BigDecimal) = Monetary(this.amount / that, asset)
 
@@ -65,17 +62,20 @@ case class Monetary(amount: BigDecimal, asset: AssetClass) extends Money {
 
   def compare(that: Money) = that match {
     case Zilch => if (amount > 0) 1 else -1
-    case m: Monetary => {
+    case m: Monetary =>
       require(this.asset == m.asset, "Assets do not match")
       this.amount compare m.amount
-    }
   }
 
   override def toString = amount.toString + " " + asset.toString
 }
 
 object Money {
-  def apply(amount: BigDecimal, asset: AssetClass): Money = if (amount == 0) Zilch else Monetary(amount, asset)
+
+  val ZERO = BigDecimal(0)
+  val ONE = BigDecimal(1)
+
+  def apply(amount: BigDecimal, asset: AssetClass): Money = if (amount == ZERO) Zilch else Monetary(amount, asset)
   def apply(s: String):Money = {
     val tokens = s.split(" ")
     apply(BigDecimal(tokens(0)), Currency(tokens(1)))

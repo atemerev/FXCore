@@ -1,7 +1,5 @@
 package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.pipscaler._
-import com.miriamlaurel.fxcore.numbers._
 import java.util.UUID
 
 /*!# Position
@@ -135,17 +133,17 @@ class Position(val primary: Monetary,
     val a2 = this.secondary.amount
     val b1 = that.primary.amount
     val b2 = that.secondary.amount
-    val c1: BigDecimal = (if (a1.signum * b1.signum == -1) a1.abs min b1.abs else BigDecimal(0)) * a1.signum
-    val c2: BigDecimal = if (a1 == 0) a2 else c1 * (a2 / a1)
+    val c1: BigDecimal = (if (a1.signum * b1.signum == -1) a1.abs min b1.abs else Money.ZERO) * a1.signum
+    val c2: BigDecimal = if (a1 == Money.ZERO) a2 else c1 * (a2 / a1)
     val d1: BigDecimal = -c1
-    val d2: BigDecimal = if (b1 == 0) b2 else d1 * (b2 / b1)
+    val d2: BigDecimal = if (b1 == Money.ZERO) b2 else d1 * (b2 / b1)
     // e1 is always zero
     val e2: BigDecimal = c2 + d2
     val sigma = if (a1.abs > b1.abs) -1 else 1
     val f1: BigDecimal = a1 + b1
     val f2: BigDecimal = if (a1.signum * b1.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
 
-    val pos: Option[Position] = if (f1 == 0) None
+    val pos: Option[Position] = if (f1 == Money.ZERO) None
     else
       Some(new Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset)))
     (pos, Money(e2, secondary.asset))
@@ -199,9 +197,7 @@ class Position(val primary: Monetary,
 /*!
 A deal is a closed position, with fixed ("realized") profit/loss.
  */
-case class Deal(position: Position, closePrice: BigDecimal, closeTimestamp: Long, profitLoss: Money) extends AccountingEntry {
-  override val change = profitLoss.amount
-  override val timestamp: Long = closeTimestamp
+case class Deal(position: Position, closePrice: BigDecimal, closeTimestamp: Long, profitLoss: Money) {
 }
 
 /*!
@@ -389,11 +385,10 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
       toMerge.foreach(position => {
         merged match {
           case None => merged = Some(position)
-          case Some(pos) => {
+          case Some(pos) =>
             val (p, m) = pos.merge(position)
             merged = p
             adjustment = adjustment + m
-          }
         }
       })
       var newMap = details(instrument) -- uuids
@@ -451,14 +446,14 @@ class PortfolioDiff(acs: PortfolioAction*) extends Entity {
 
 class ConversionException extends Exception
 
-class Account(
+class Account (
                val portfolio: Portfolio,
                val asset: AssetClass = Currency("USD"),
                val balance: Money = Zilch,
                val deals: List[Deal] = List[Deal](),
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
-               val limit: Int = 50) {
+               val limit: Int = 50) extends Entity {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
@@ -480,10 +475,10 @@ class Account(
   }
 
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
-    val newActions = diff.actions.map(_ match {
+    val newActions = diff.actions.map {
       case CreateDeal(deal) => CreateDeal(convertDeal(deal, market))
       case x => x
-    })
+    }
     new PortfolioDiff(newActions: _*)
   }
 

@@ -1,12 +1,7 @@
 package com.miriamlaurel.fxcore
 
 import scala.math.max
-import com.miriamlaurel.fxcore.currencies._
-import com.miriamlaurel.fxcore.numbers.{Monetary, Zilch, Money}
 
-/**
- * @author Alexander Temerev
- */
 case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
 
   private val content = Map[Instrument, Snapshot](snapshots.map(l => (l.instrument, l)): _*)

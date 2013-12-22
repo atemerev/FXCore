@@ -3,9 +3,6 @@ package com.miriamlaurel.fxcore
 import java.util.UUID
 import java.io.Serializable
 
-/**
- * @author Alexander Temerev
- */
 trait Entity {
   val uuid: UUID = UUID.randomUUID
 

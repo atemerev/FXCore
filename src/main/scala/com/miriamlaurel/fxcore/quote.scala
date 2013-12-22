@@ -1,10 +1,5 @@
 package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.pipscaler._
-
-/**
- * @author Alexander Temerev
- */
 case class Quote(
         instrument: Instrument,
         bid: Option[BigDecimal],

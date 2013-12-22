@@ -1,13 +1,13 @@
 package com.miriamlaurel.fxcore.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.miriamlaurel.fxcore.{Quote, Snapshot}
 
 /**
  * @author Alexander Temerev
  */
-class SnapshotTest extends FunSuite with ShouldMatchers {
+class SnapshotTest extends FunSuite with Matchers {
 
   private val snapshot = Snapshot("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000")
 

@@ -1,8 +1,5 @@
 package com.miriamlaurel.fxcore
 
-/**
- * @author Alexander Temerev
- */
 trait AssetClass {
   def code: String
   override def toString = code

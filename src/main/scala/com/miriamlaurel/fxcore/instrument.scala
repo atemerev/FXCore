@@ -1,8 +1,5 @@
 package com.miriamlaurel.fxcore
 
-/**
- * @author Alexander Temerev
- */
 trait Instrument {
   def base: AssetClass
   def counter: AssetClass

@@ -1,17 +1,15 @@
 package com.miriamlaurel.fxcore.test
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.currencies._
-import com.miriamlaurel.fxcore.currencypairs._
 import com.miriamlaurel.fxcore.Currency
 import com.miriamlaurel.fxcore.Instrument
 
 /**
  * @author Alexander Temerev
  */
-class InstrumentTest extends FunSuite with ShouldMatchers {
+class InstrumentTest extends FunSuite with Matchers {
 
   test("currencies and metals should compare properly to each other") {
     AUD should equal(Currency("AUD"))
