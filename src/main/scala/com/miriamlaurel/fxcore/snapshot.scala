@@ -2,28 +2,28 @@ package com.miriamlaurel.fxcore
 
 import java.util.UUID
 
-case class MarketEntry(instrument: Instrument,
+case class Order(instrument: Instrument,
                        side: QuoteSide.Value,
                        amount: BigDecimal,
                        price: BigDecimal,
                        source: Party = Me,
                        sourceId: Option[String] = None,
                        override val timestamp: Long = System.currentTimeMillis(),
-                       override val uuid: UUID = UUID.randomUUID()) extends Ordered[MarketEntry] with Entity with TimeEvent {
+                       override val uuid: UUID = UUID.randomUUID()) extends Ordered[Order] with Entity with TimeEvent {
 
   require(amount > 0)
   require(price > 0)
 
-  override def compare(that: MarketEntry) = price compare that.price
+  override def compare(that: Order) = price compare that.price
   override def toString = "%s %f %s @%f".format(side.toString, amount.bigDecimal, instrument.toString, price.bigDecimal)
 }
 
 case class Snapshot(
   instrument: Instrument,
-  allEntries: List[MarketEntry],
+  allEntries: List[Order],
   override val timestamp: Long) extends TimeEvent {
 
-  def this(instrument: Instrument, allOrders: List[MarketEntry]) =
+  def this(instrument: Instrument, allOrders: List[Order]) =
     this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))
 
   lazy val entries = allEntries.sorted
@@ -40,7 +40,7 @@ case class Snapshot(
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
-  def slice(side: QuoteSide.Value, amount: BigDecimal): List[MarketEntry] = {
+  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = {
     var sum = BigDecimal(0)
     var enough = false
     val orders = if (side == QuoteSide.Bid) bids else asks
@@ -64,11 +64,11 @@ case class Snapshot(
     }
   }
 
-  def +(order: MarketEntry): Snapshot = copy(allEntries = this.allEntries.::(order))
+  def +(order: Order): Snapshot = copy(allEntries = this.allEntries.::(order))
 
   override def toString = Snapshot.toCsv(this)
 
-  private def weightedAvg(orders: List[MarketEntry]): BigDecimal =
+  private def weightedAvg(orders: List[Order]): BigDecimal =
     orders.map(order => order.price * order.amount).reduceLeft(_ + _) /
             orders.map(_.amount).reduceLeft(_ + _)
 
@@ -87,8 +87,8 @@ object Snapshot {
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val orders = bidS.map(
-      n => new MarketEntry(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
-      askS.map(n => new MarketEntry(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
+      n => new Order(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
+      askS.map(n => new Order(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
     Snapshot(instrument, orders, ts)
   }
 

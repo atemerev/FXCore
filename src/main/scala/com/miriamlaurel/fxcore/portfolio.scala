@@ -453,7 +453,7 @@ class Account (
                val deals: List[Deal] = List[Deal](),
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
-               val limit: Int = 50) extends Entity {
+               val limit: Int = 50) {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position

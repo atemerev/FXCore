@@ -1,3 +1,5 @@
+organization := "com.miriamlaurel"
+
 name := "fxcore"
 
 version := "0.8"
