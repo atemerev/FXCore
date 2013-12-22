@@ -16,23 +16,23 @@ Thus, a position has following fields:
 */
 class Position(val primary: Monetary,
                val secondary: Monetary,
-               val matching: Option[UUID] = None,
+               val matching: Option[Long] = None,
                override val timestamp: Long = System.currentTimeMillis(),
-               override val uuid: UUID = UUID.randomUUID)
-  extends Entity with TimeEvent {
+               override val id: Long = Identity.nextId)
+  extends Identity with TimeEvent {
 
   def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID]) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long]) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching)
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long], timestamp: Long) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching, timestamp)
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long, uuid: UUID) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long], timestamp: Long, id: Long) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter),
-      matching, timestamp, uuid)
+      matching, timestamp, id)
 
   /*!
   If position's primary amount is positive (a long position), it's secondary amount should be negative,
@@ -65,7 +65,7 @@ class Position(val primary: Monetary,
   /*!
   Create a reversed position with new price and matching UUID. This can be used efficiently to close a position.
    */
-  def close(newPrice: BigDecimal): Position = new Position(instrument, newPrice, -primary.amount, Some(uuid))
+  def close(newPrice: BigDecimal): Position = new Position(instrument, newPrice, -primary.amount, Some(id))
 
   /*!
   Position's profit or loss for any price level can be easily calculated, provided it's expressed in position's
@@ -187,7 +187,7 @@ class Position(val primary: Monetary,
     require(oldPosition.amount != this.amount)
     val closingAmount = (oldPosition.amount min this.amount) * oldPosition.primary.amount.signum
     val closingPart = new Position(oldPosition.instrument, oldPosition.price,
-      closingAmount, Some(oldPosition.uuid), oldPosition.timestamp)
+      closingAmount, Some(oldPosition.id), oldPosition.timestamp)
     new Deal(closingPart, this.price, this.timestamp, (oldPosition merge this)._2)
   }
 
@@ -340,7 +340,7 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
 A "non-strict" portfolio allows multiple positions for the same instrument. This behavior is consistent with
 position handling by most market makers.
  */
-class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Position]]) extends Portfolio {
+class NonStrictPortfolio protected(val details: Map[Instrument, Map[Long, Position]]) extends Portfolio {
 
   def this() = this (Map())
 
@@ -354,14 +354,14 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
     for (action <- diff.actions) {
       action match {
         case AddPosition(p) => {
-          val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
-          require(!(byInstrument contains p.uuid))
-          newDetails = newDetails + (p.instrument -> (byInstrument + (p.uuid -> p)))
+          val byInstrument = newDetails.getOrElse(p.instrument, Map[Long, Position]())
+          require(!(byInstrument contains p.id))
+          newDetails = newDetails + (p.instrument -> (byInstrument + (p.id -> p)))
         }
         case RemovePosition(p) => {
-          val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
-          require(byInstrument contains p.uuid)
-          newDetails = newDetails + (p.instrument -> (byInstrument - p.uuid))
+          val byInstrument = newDetails.getOrElse(p.instrument, Map[Long, Position]())
+          require(byInstrument contains p.id)
+          newDetails = newDetails + (p.instrument -> (byInstrument - p.id))
         }
         case _ => // Ignore
       }
@@ -374,8 +374,8 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
   merged positions) and a diff value containing all changes have been made. Merge operation can produce ("realize")
   profit or loss, which is stored in a diff value as an "adjustment".
    */
-  def mergePositions(uuids: Set[UUID]): (NonStrictPortfolio, PortfolioDiff) = {
-    val toMerge = positions.filter(position => uuids.contains(position.uuid))
+  def mergePositions(uuids: Set[Long]): (NonStrictPortfolio, PortfolioDiff) = {
+    val toMerge = positions.filter(position => uuids.contains(position.id))
     if (toMerge.size == 0) (this, new PortfolioDiff())
     else {
       require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
@@ -393,7 +393,7 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Positi
       })
       var newMap = details(instrument) -- uuids
       merged match {
-        case Some(position) => newMap = newMap + (position.uuid -> position)
+        case Some(position) => newMap = newMap + (position.id -> position)
         case None => // do nothing
       }
       val newDetails = details + (instrument -> newMap)
@@ -437,11 +437,11 @@ case class MergePositions(instrument: Instrument, merged: Set[Position], result:
 /*!#PortfolioDiff
 A diff value is just a list of portfolio actions that can be applied sequentially.
  */
-class PortfolioDiff(acs: PortfolioAction*) extends Entity {
+case class PortfolioDiff(acs: PortfolioAction*) {
 
   val actions = acs.toList
 
-  def +(action: PortfolioAction) = new PortfolioDiff(action :: this.actions: _*)
+  def +(action: PortfolioAction) = PortfolioDiff(action :: this.actions: _*)
 }
 
 class ConversionException extends Exception
@@ -453,7 +453,8 @@ class Account (
                val deals: List[Deal] = List[Deal](),
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
-               val limit: Int = 50) {
+               val limit: Int = 50,
+               override val id: Long = Identity.nextId) extends Identity {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position

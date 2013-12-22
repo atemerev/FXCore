@@ -1,17 +1,17 @@
 package com.miriamlaurel.fxcore
 
-import java.util.UUID
-import java.io.Serializable
+object Identity {
 
-trait Entity {
-  val uuid: UUID = UUID.randomUUID
+  private var idGen: Long = System.currentTimeMillis()
 
-  override def equals(that: Any): Boolean = that match {
-    case e: Entity => this.uuid == e.uuid
-    case _ => false
+  def nextId: Long = {
+    idGen = idGen + 1
+    -idGen
   }
+}
 
-  override def hashCode = uuid.hashCode()
+trait Identity {
+  val id: Long
 }
 
 trait TimeEvent {

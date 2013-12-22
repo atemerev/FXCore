@@ -1,7 +1,5 @@
 package com.miriamlaurel.fxcore
 
-import java.util.UUID
-
 case class Order(instrument: Instrument,
                        side: QuoteSide.Value,
                        amount: BigDecimal,
@@ -9,7 +7,7 @@ case class Order(instrument: Instrument,
                        source: Party = Me,
                        sourceId: Option[String] = None,
                        override val timestamp: Long = System.currentTimeMillis(),
-                       override val uuid: UUID = UUID.randomUUID()) extends Ordered[Order] with Entity with TimeEvent {
+                       override val id: Long = Identity.nextId) extends Ordered[Order] with Identity with TimeEvent {
 
   require(amount > 0)
   require(price > 0)

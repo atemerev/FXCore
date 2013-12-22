@@ -3,10 +3,6 @@ package com.miriamlaurel.fxcore.test
 import com.miriamlaurel.fxcore._
 import org.scalatest.{Matchers, FunSuite}
 
-/**
- * @author Alexander Temerev
- */
-
 class AccountingTest extends FunSuite with Matchers {
 
   val market = Market(
@@ -58,8 +54,8 @@ class AccountingTest extends FunSuite with Matchers {
     account = (account <<(p2, market)).get
     account.balance should equal(Money("0 USD"))
     account.portfolio.positions(eurUsd).size should equal(2)
-    val pc1 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.uuid))
-    val pc2 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.uuid))
+    val pc1 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.id))
+    val pc2 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.id))
     account = (account <<(pc1, market)).get
     account.portfolio.positions(eurUsd).size should equal(1)
     account.balance should equal(Money("-5 USD"))
@@ -90,7 +86,7 @@ class AccountingTest extends FunSuite with Matchers {
     portfolio = (portfolio << p1)._1
     portfolio = (portfolio << p2)._1
     portfolio = (portfolio << p3)._1
-    val (newPortfolio, diff) = portfolio.mergePositions(Set(p1.uuid, p2.uuid, p3.uuid))
+    val (newPortfolio, diff) = portfolio.mergePositions(Set(p1.id, p2.id, p3.id))
     newPortfolio.positions.size should equal(1)
     val merged = newPortfolio.positions.head
     merged.amount should equal(BigDecimal(3000))
@@ -103,7 +99,7 @@ class AccountingTest extends FunSuite with Matchers {
     val p4 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(-1000))
     portfolio = (portfolio << p4)._1
     portfolio.positions.size should equal(2)
-    val (newPortfolio2, diff2) = portfolio.mergePositions(Set(merged.uuid, p4.uuid))
+    val (newPortfolio2, diff2) = portfolio.mergePositions(Set(merged.id, p4.id))
     newPortfolio2.positions.size should equal(1)
     val merged2 = newPortfolio2.positions.head
     merged2.amount should equal(BigDecimal(2000))
