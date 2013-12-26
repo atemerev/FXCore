@@ -472,7 +472,7 @@ class Account (
     for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
          newBalance = (balance + converted).setScale(scale);
          convertedDiff = convertDiff(diff, market))
-    yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale)
+    yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale, limit, id)
   }
 
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
