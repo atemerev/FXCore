@@ -84,6 +84,8 @@ class Position(val primary: Monetary,
     for (price <- if (side == PositionSide.Long) q.bid else q.ask) yield profitLoss(price)
   }
 
+  def withId(newId: Long) = new Position(primary, secondary, matching, timestamp, newId)
+
   /*!
   Profit/loss can be expressed in any asset, provided we have all quotes necessary for conversion from
   position's secondary asset to desired asset. A Market instance is required for that; if conversion can't
@@ -474,6 +476,8 @@ class Account (
          convertedDiff = convertDiff(diff, market))
     yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale, limit, id)
   }
+
+  def withId(newId: Long) = new Account(portfolio, asset, balance, deals, diff, scale, limit, newId)
 
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
     val newActions = diff.actions.map {
