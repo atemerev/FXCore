@@ -479,6 +479,8 @@ class Account (
 
   def withId(newId: Long) = new Account(portfolio, asset, balance, deals, diff, scale, limit, newId)
 
+  def applyDiff(diff: PortfolioDiff) = new Account(portfolio.apply(diff), asset, balance, deals, Some(diff), scale, limit, id)
+
   private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
     val newActions = diff.actions.map {
       case CreateDeal(deal) => CreateDeal(convertDeal(deal, market))
