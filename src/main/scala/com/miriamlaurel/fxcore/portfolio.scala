@@ -16,21 +16,21 @@ Thus, a position has following fields:
 */
 class Position(val primary: Monetary,
                val secondary: Monetary,
-               val matching: Option[Long] = None,
+               val matching: Option[UUID] = None,
                override val timestamp: Long = System.currentTimeMillis(),
-               override val id: Long = Identity.nextId)
-  extends Identity with TimeEvent {
+               override val id: UUID = UUID.randomUUID())
+  extends Entity with TimeEvent {
 
   def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long]) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID]) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching)
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long], timestamp: Long) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching, timestamp)
 
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[Long], timestamp: Long, id: Long) =
+  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long, id: UUID) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter),
       matching, timestamp, id)
 
@@ -83,8 +83,6 @@ class Position(val primary: Monetary,
     require(q.instrument == this.instrument, "Quote and position instrument should match")
     for (price <- if (side == PositionSide.Long) q.bid else q.ask) yield profitLoss(price)
   }
-
-  def withId(newId: Long) = new Position(primary, secondary, matching, timestamp, newId)
 
   /*!
   Profit/loss can be expressed in any asset, provided we have all quotes necessary for conversion from
@@ -342,7 +340,7 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
 A "non-strict" portfolio allows multiple positions for the same instrument. This behavior is consistent with
 position handling by most market makers.
  */
-class NonStrictPortfolio protected(val details: Map[Instrument, Map[Long, Position]]) extends Portfolio {
+class NonStrictPortfolio protected(val details: Map[Instrument, Map[UUID, Position]]) extends Portfolio {
 
   def this() = this (Map())
 
@@ -356,12 +354,12 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[Long, Positi
     for (action <- diff.actions) {
       action match {
         case AddPosition(p) => {
-          val byInstrument = newDetails.getOrElse(p.instrument, Map[Long, Position]())
+          val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
           require(!(byInstrument contains p.id))
           newDetails = newDetails + (p.instrument -> (byInstrument + (p.id -> p)))
         }
         case RemovePosition(p) => {
-          val byInstrument = newDetails.getOrElse(p.instrument, Map[Long, Position]())
+          val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
           require(byInstrument contains p.id)
           newDetails = newDetails + (p.instrument -> (byInstrument - p.id))
         }
@@ -376,8 +374,8 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[Long, Positi
   merged positions) and a diff value containing all changes have been made. Merge operation can produce ("realize")
   profit or loss, which is stored in a diff value as an "adjustment".
    */
-  def mergePositions(uuids: Set[Long]): (NonStrictPortfolio, PortfolioDiff) = {
-    val toMerge = positions.filter(position => uuids.contains(position.id))
+  def mergePositions(ids: Set[UUID]): (NonStrictPortfolio, PortfolioDiff) = {
+    val toMerge = positions.filter(position => ids.contains(position.id))
     if (toMerge.size == 0) (this, new PortfolioDiff())
     else {
       require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
@@ -393,7 +391,7 @@ class NonStrictPortfolio protected(val details: Map[Instrument, Map[Long, Positi
             adjustment = adjustment + m
         }
       })
-      var newMap = details(instrument) -- uuids
+      var newMap = details(instrument) -- ids
       merged match {
         case Some(position) => newMap = newMap + (position.id -> position)
         case None => // do nothing
@@ -456,7 +454,7 @@ class Account (
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
                val limit: Int = 50,
-               override val id: Long = Identity.nextId) extends Identity {
+               override val id: UUID = UUID.randomUUID()) extends Entity {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
@@ -476,8 +474,6 @@ class Account (
          convertedDiff = convertDiff(diff, market))
     yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale, limit, id)
   }
-
-  def withId(newId: Long) = new Account(portfolio, asset, balance, deals, diff, scale, limit, newId)
 
   def applyDiff(diff: PortfolioDiff) = new Account(portfolio.apply(diff), asset, balance, deals, Some(diff), scale, limit, id)
 

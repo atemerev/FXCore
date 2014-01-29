@@ -1,17 +1,9 @@
 package com.miriamlaurel.fxcore
 
-object Identity {
+import java.util.UUID
 
-  private var idGen: Long = System.currentTimeMillis()
-
-  def nextId: Long = {
-    idGen = idGen + 1
-    -idGen
-  }
-}
-
-trait Identity {
-  val id: Long
+trait Entity {
+  val id: UUID = UUID.randomUUID()
 }
 
 trait TimeEvent {
