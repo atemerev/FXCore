@@ -9,7 +9,7 @@ case class Order(instrument: Instrument,
                        source: Party = Me,
                        sourceId: Option[String] = None,
                        override val timestamp: Long = System.currentTimeMillis(),
-                       override val id: UUID = UUID.randomUUID()) extends Ordered[Order] with Entity with TimeEvent {
+                       override val id: UUID = UUID.randomUUID()) extends Ordered[Order] with Identity with Timestamp {
 
   require(amount > 0)
   require(price > 0)
@@ -21,7 +21,7 @@ case class Order(instrument: Instrument,
 case class Snapshot(
   instrument: Instrument,
   allEntries: List[Order],
-  override val timestamp: Long) extends TimeEvent {
+  override val timestamp: Long) extends Timestamp {
 
   def this(instrument: Instrument, allOrders: List[Order]) =
     this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))

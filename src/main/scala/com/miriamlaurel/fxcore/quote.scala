@@ -4,7 +4,7 @@ case class Quote(
         instrument: Instrument,
         bid: Option[BigDecimal],
         ask: Option[BigDecimal],
-        override val timestamp: Long) extends TimeEvent {
+        override val timestamp: Long) extends Timestamp {
 
   val isFull: Boolean = bid.isDefined && ask.isDefined
 

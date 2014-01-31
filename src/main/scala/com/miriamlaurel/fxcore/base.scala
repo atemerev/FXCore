@@ -2,10 +2,10 @@ package com.miriamlaurel.fxcore
 
 import java.util.UUID
 
-trait Entity {
+trait Identity {
   val id: UUID = UUID.randomUUID()
 }
 
-trait TimeEvent {
+trait Timestamp {
   val timestamp: Long = System.currentTimeMillis()
 }

@@ -19,7 +19,7 @@ class Position(val primary: Monetary,
                val matching: Option[UUID] = None,
                override val timestamp: Long = System.currentTimeMillis(),
                override val id: UUID = UUID.randomUUID())
-  extends Entity with TimeEvent {
+  extends Identity with Timestamp {
 
   def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal) =
     this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
@@ -454,7 +454,7 @@ class Account (
                val diff: Option[PortfolioDiff] = None,
                val scale: Int = 2,
                val limit: Int = 50,
-               override val id: UUID = UUID.randomUUID()) extends Entity {
+               override val id: UUID = UUID.randomUUID()) extends Identity {
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
