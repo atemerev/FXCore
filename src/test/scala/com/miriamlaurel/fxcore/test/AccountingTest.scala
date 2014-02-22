@@ -52,18 +52,18 @@ class AccountingTest extends FunSuite with Matchers {
     val p2 = new Position(eurUsd, BigDecimal("1.3100"), BigDecimal(2000))
     account = (account <<(p1, market)).get
     account = (account <<(p2, market)).get
-    account.balance should equal(Money("0 USD"))
+    account.initialBalance should equal(Money("0 USD"))
     account.portfolio.positions(eurUsd).size should equal(2)
     val pc1 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.id))
     val pc2 = new Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.id))
     account = (account <<(pc1, market)).get
     account.portfolio.positions(eurUsd).size should equal(1)
-    account.balance should equal(Money("-5 USD"))
+    account.closeProfitLoss should equal(Money("-5 USD"))
     account = (account <<(pc2, market)).get
     account.portfolio.positions(eurUsd).size should equal(0)
-    account.balance should equal(Money("-25 USD"))
+    account.closeProfitLoss should equal(Money("-25 USD"))
     account = (account <<(p1, market)).get
-    account.balance should equal(Money("-25 USD"))
+    account.closeProfitLoss should equal(Money("-25 USD"))
   }
 
   test("Equal and opposite positions") {

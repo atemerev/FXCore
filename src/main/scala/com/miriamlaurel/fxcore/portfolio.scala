@@ -449,46 +449,40 @@ class ConversionException extends Exception
 class Account (
                val portfolio: Portfolio,
                val asset: AssetClass = Currency("USD"),
-               val balance: Money = Zilch,
+               val initialBalance: Money = Zilch,
                val deals: List[Deal] = List[Deal](),
                val diff: Option[PortfolioDiff] = None,
-               val scale: Int = 2,
-               val limit: Int = 50,
                override val id: UUID = UUID.randomUUID()) extends Identity {
+
+  lazy val closeProfitLoss: Money = deals.map(_.profitLoss).foldRight(Zilch: Money)(_ + _)
 
   def <<(position: Position, market: Market): Option[Account] = {
     val (newPortfolio, diff) = portfolio << position
-    val deals: List[Deal] = diff.actions.filter(_.isInstanceOf[CreateDeal]).asInstanceOf[List[CreateDeal]].map(_.deal)
-    val profitLoss = if (deals.size > 0) {
-      val deal = deals(0)
-      deal.profitLoss
-    } else Zilch
-    val closeSide = position.side match {
-      case PositionSide.Long => QuoteSide.Bid
-      case PositionSide.Short => QuoteSide.Ask
-    }
-    val entr = this.deals ++ deals
-    val newDeals = if (entr.size > limit) entr.drop(limit - deals.size) else entr
-    for (converted <- market.convert(profitLoss, asset, closeSide, position.amount);
-         newBalance = (balance + converted).setScale(scale);
-         convertedDiff = convertDiff(diff, market))
-    yield new Account(newPortfolio, asset, newBalance, newDeals, Some(convertedDiff), scale, limit, id)
+    val deals: List[Deal] = diff.actions.collect{case CreateDeal(deal) => deal}
+    for (convertedDiff <- convertDiff(diff, market)) yield new Account(newPortfolio, asset, initialBalance,
+      this.deals ++ deals, Some(convertedDiff), id)
   }
 
-  def applyDiff(diff: PortfolioDiff) = new Account(portfolio.apply(diff), asset, balance, deals, Some(diff), scale, limit, id)
+  def applyDiff(diff: PortfolioDiff) = new Account(portfolio.apply(diff), asset, initialBalance, deals, Some(diff), id)
 
-  private def convertDiff(diff: PortfolioDiff, market: Market): PortfolioDiff = {
-    val newActions = diff.actions.map {
-      case CreateDeal(deal) => CreateDeal(convertDeal(deal, market))
-      case x => x
+  def total(market: Market): Option[Money] = for {
+    openPl <- portfolio.profitLoss(asset, market)
+  } yield initialBalance + openPl + closeProfitLoss
+
+  private def convertDiff(diff: PortfolioDiff, market: Market): Option[PortfolioDiff] = {
+    val newActions: List[PortfolioAction] = diff.actions.flatMap {
+      case CreateDeal(deal) => for (d <- convertDeal(deal, market)) yield CreateDeal(d)
+      case x: PortfolioAction => Some(x)
     }
-    new PortfolioDiff(newActions: _*)
+    // a hack, but I don't know enough functional kung-fu to do otherwise...
+    if (diff.actions.size == newActions.size) Some(new PortfolioDiff(newActions: _*)) else None
   }
 
-  private def convertDeal(deal: Deal, market: Market): Deal = {
+  private def convertDeal(deal: Deal, market: Market): Option[Deal] = {
     val rawPl = deal.profitLoss
     val closeSide = PositionSide.close(deal.position.side)
-    val converted = market.convert(rawPl, this.asset, closeSide, deal.position.amount)
-    new Deal(deal.position, deal.closePrice, deal.closeTimestamp, converted.get)
+    for {
+      converted <- market.convert(rawPl, this.asset, closeSide, deal.position.amount)
+    } yield new Deal(deal.position, deal.closePrice, deal.closeTimestamp, converted)
   }
 }
