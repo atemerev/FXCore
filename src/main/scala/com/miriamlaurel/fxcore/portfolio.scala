@@ -14,9 +14,9 @@ Thus, a position has following fields:
 * timestamp: position's creation time;
 * uuid: this position's UUID.
 */
-class Position(val primary: Monetary,
-               val secondary: Monetary,
-               val matching: Option[UUID] = None,
+case class Position(primary: Monetary,
+               secondary: Monetary,
+               matching: Option[UUID] = None,
                override val timestamp: Long = System.currentTimeMillis(),
                override val id: UUID = UUID.randomUUID())
   extends Identity with Timestamp {
@@ -446,12 +446,12 @@ case class PortfolioDiff(acs: PortfolioAction*) {
 
 class ConversionException extends Exception
 
-class Account (
-               val portfolio: Portfolio,
-               val asset: AssetClass = Currency("USD"),
-               val initialBalance: Money = Zilch,
-               val deals: List[Deal] = List[Deal](),
-               val diff: Option[PortfolioDiff] = None,
+case class Account (
+               portfolio: Portfolio,
+               asset: AssetClass = Currency("USD"),
+               initialBalance: Money = Zilch,
+               deals: List[Deal] = List[Deal](),
+               diff: Option[PortfolioDiff] = None,
                override val id: UUID = UUID.randomUUID()) extends Identity {
 
   lazy val closeProfitLoss: Money = deals.map(_.profitLoss).foldRight(Zilch: Money)(_ + _)
