@@ -1,5 +1,7 @@
 package com.miriamlaurel.fxcore
 
+import com.miriamlaurel.fxcore.asset.{Currency, AssetClass}
+
 sealed trait Money extends Ordered[Money] {
 
   val ZERO = BigDecimal(0)
@@ -76,7 +78,8 @@ object Money {
   val ONE = BigDecimal(1)
 
   def apply(amount: BigDecimal, asset: AssetClass): Money = if (amount == ZERO) Zilch else Monetary(amount, asset)
-  def apply(s: String):Money = {
+
+  def apply(s: String): Money = {
     val tokens = s.split(" ")
     apply(BigDecimal(tokens(0)), Currency(tokens(1)))
   }

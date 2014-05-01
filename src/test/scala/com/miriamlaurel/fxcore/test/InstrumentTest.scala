@@ -3,8 +3,8 @@ package com.miriamlaurel.fxcore.test
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.Currency
-import com.miriamlaurel.fxcore.Instrument
+import com.miriamlaurel.fxcore.asset.{Gold, Currency}
+import com.miriamlaurel.fxcore.instrument.{MetalInstrument, Instrument, CurrencyPair}
 
 /**
  * @author Alexander Temerev

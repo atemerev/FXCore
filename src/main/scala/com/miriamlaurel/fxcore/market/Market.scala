@@ -1,12 +1,17 @@
-package com.miriamlaurel.fxcore
+package com.miriamlaurel.fxcore.market
 
 import scala.math.max
+import com.miriamlaurel.fxcore.asset.AssetClass
+import com.miriamlaurel.fxcore._
+import com.miriamlaurel.fxcore.asset.Currency
+import com.miriamlaurel.fxcore.instrument.Instrument
+import org.joda.time.DateTime
 
 case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
 
   private val content = Map[Instrument, Snapshot](snapshots.map(l => (l.instrument, l)): _*)
 
-  lazy val timestamp = snapshots.map(_.timestamp).max
+  lazy val timestamp = new DateTime(snapshots.map(_.timestamp.getMillis).max)
 
   def apply(instrument: Instrument): Snapshot = content(instrument)
 
@@ -32,7 +37,7 @@ case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
            bAsk <- y.ask;
            bid <- Some(aBid * bBid);
            ask <- Some(aAsk * bAsk)
-      ) yield Quote(instrument, Some(bid), Some(ask), max(a.timestamp, b.timestamp))
+      ) yield Quote(instrument, Some(bid), Some(ask), new DateTime(a.timestamp.getMillis max b.timestamp.getMillis))
     }
   }
 

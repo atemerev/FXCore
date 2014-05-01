@@ -3,6 +3,10 @@ package com.miriamlaurel
 import scala.math._
 import scala.BigDecimal
 import java.text.DecimalFormat
+import com.miriamlaurel.fxcore.asset.Currency
+import com.miriamlaurel.fxcore.instrument.{Instrument, CurrencyPair}
+import com.miriamlaurel.fxcore.party.Party
+import com.miriamlaurel.fxcore.market.Quote
 
 package object fxcore {
 

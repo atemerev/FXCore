@@ -2,7 +2,7 @@ package com.miriamlaurel.fxcore.test
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import com.miriamlaurel.fxcore.{Quote, Snapshot}
+import com.miriamlaurel.fxcore.market.{Quote, Snapshot}
 
 /**
  * @author Alexander Temerev

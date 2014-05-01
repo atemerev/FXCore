@@ -2,7 +2,8 @@ package com.miriamlaurel.fxcore.test
 
 import org.scalatest.Matchers
 import org.scalatest.FunSuite
-import com.miriamlaurel.fxcore._
+import com.miriamlaurel.fxcore.market.{Snapshot, Market}
+import com.miriamlaurel.fxcore.instrument.CurrencyPair
 
 /**
  * @author Alexander Temerev

@@ -1,30 +1,17 @@
-package com.miriamlaurel.fxcore
+package com.miriamlaurel.fxcore.market
 
-import java.util.UUID
-
-case class Order(instrument: Instrument,
-                       side: QuoteSide.Value,
-                       amount: BigDecimal,
-                       price: BigDecimal,
-                       source: Party = Me,
-                       sourceId: Option[String] = None,
-                       override val timestamp: Long = System.currentTimeMillis(),
-                       override val id: UUID = UUID.randomUUID()) extends Ordered[Order] with Identity with Timestamp {
-
-  require(amount > 0)
-  require(price > 0)
-
-  override def compare(that: Order) = price compare that.price
-  override def toString = "%s %f %s @%f".format(side.toString, amount.bigDecimal, instrument.toString, price.bigDecimal)
-}
+import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
+import org.joda.time.DateTime
+import com.miriamlaurel.fxcore.{Me, Timestamp}
+import com.miriamlaurel.fxcore.party.Party
 
 case class Snapshot(
   instrument: Instrument,
   allEntries: List[Order],
-  override val timestamp: Long) extends Timestamp {
+  override val timestamp: DateTime) extends Timestamp {
 
   def this(instrument: Instrument, allOrders: List[Order]) =
-    this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => ts1 min ts2))
+    this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => if (ts1.isBefore(ts2)) ts1 else ts2))
 
   lazy val entries = allEntries.sorted
 
@@ -81,7 +68,7 @@ object Snapshot {
   def fromCsv(csv: String): Snapshot = {
     def pair[A](l: List[A]): List[(A, A)] = l.grouped(2).collect {case List(a, b) => (a, b)}.toList
     val tokens = csv.split(",")
-    val ts = tokens(0).toLong
+    val ts = new DateTime(tokens(0).toLong)
     val instrument = CurrencyPair(tokens(1))
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
@@ -93,7 +80,7 @@ object Snapshot {
   }
 
   def toCsv(snapshot: Snapshot) = {
-    snapshot.timestamp.toString + "," + snapshot.instrument.toString + ",BIDS," +
+    snapshot.timestamp.getMillis + "," + snapshot.instrument.toString + ",BIDS," +
             snapshot.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
             ",ASKS," +
             snapshot.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")
