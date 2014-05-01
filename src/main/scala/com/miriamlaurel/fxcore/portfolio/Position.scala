@@ -171,7 +171,7 @@ case class Position(primary: Monetary,
       merged match {
         // If merged positions collapsed -> remove old position, add new finished deal
         case None => {
-          val deal = new Deal(oldP, this.price, this.timestamp, profitLoss)
+          val deal = Deal(oldP, this.price, this.timestamp, profitLoss)
           new PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
         }
         // If merging produced new position...

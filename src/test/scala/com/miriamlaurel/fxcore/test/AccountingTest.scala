@@ -1,12 +1,12 @@
 package com.miriamlaurel.fxcore.test
 
+import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.market.{QuoteSide, Market, Snapshot}
-import com.miriamlaurel.fxcore.{Zilch, Money}
-import org.scalatest.{Matchers, FunSuite}
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
 import com.miriamlaurel.fxcore.asset.Currency
 import com.miriamlaurel.fxcore.portfolio.{MergePositions, NonStrictPortfolio, Position, StrictPortfolio}
-import com.miriamlaurel.fxcore.accounting.Account
+import com.miriamlaurel.fxcore.accounting.Ledger
+import org.scalatest.{Matchers, FunSuite}
 
 class AccountingTest extends FunSuite with Matchers {
 
@@ -49,37 +49,29 @@ class AccountingTest extends FunSuite with Matchers {
     pl should equal(BigDecimal(300))
   }
 
-  test("Account with non-strict portfolio") {
-    val portfolio = new NonStrictPortfolio
-    var account = new Account(portfolio)
-    val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
-    val p1 = Position(eurUsd, BigDecimal("1.3050"), BigDecimal(1000))
-    val p2 = Position(eurUsd, BigDecimal("1.3100"), BigDecimal(2000))
-    account = (account <<(p1, market)).get
-    account = (account <<(p2, market)).get
-    account.initialBalance should equal(Money("0 USD"))
-    account.portfolio.positions(eurUsd).size should equal(2)
-    val pc1 = Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.id))
-    val pc2 = Position(eurUsd, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.id))
-    account = (account <<(pc1, market)).get
-    account.portfolio.positions(eurUsd).size should equal(1)
-    account.closeProfitLoss should equal(Money("-5 USD"))
-    account = (account <<(pc2, market)).get
-    account.portfolio.positions(eurUsd).size should equal(0)
-    account.closeProfitLoss should equal(Money("-25 USD"))
-    account = (account <<(p1, market)).get
-    account.closeProfitLoss should equal(Money("-25 USD"))
+  test("Non-strict portfolio") {
+    var portfolio = new NonStrictPortfolio
+    val p1 = Position(EURUSD, BigDecimal("1.3050"), BigDecimal(1000))
+    val p2 = Position(EURUSD, BigDecimal("1.3100"), BigDecimal(2000))
+    portfolio = (portfolio << p1)._1
+    portfolio = (portfolio << p2)._1
+    portfolio.positions(EURUSD).size should equal(2)
+    val pc1 = Position(EURUSD, BigDecimal("1.3000"), BigDecimal(-1000), Some(p1.id))
+    val pc2 = Position(EURUSD, BigDecimal("1.3000"), BigDecimal(-2000), Some(p2.id))
+    portfolio = (portfolio << pc1)._1
+    portfolio.positions(EURUSD).size should equal(1)
+    portfolio = (portfolio << pc2)._1
+    portfolio.positions(EURUSD).size should equal(0)
   }
 
   test("Equal and opposite positions") {
-    val portfolio = new NonStrictPortfolio
-    var account = new Account(portfolio)
+    var portfolio = new NonStrictPortfolio
     val eurUsd: CurrencyPair = CurrencyPair("EUR/USD")
     val p1 = Position(eurUsd, BigDecimal("1.3050"), BigDecimal(1000))
     val p2 = Position(eurUsd, BigDecimal("1.3100"), BigDecimal(-1000))
-    account = (account <<(p1, market)).get
-    account = (account <<(p2, market)).get
-    account.portfolio.positions(eurUsd).size should equal(2)
+    portfolio = (portfolio << p1)._1
+    portfolio = (portfolio << p2)._1
+    portfolio.positions(eurUsd).size should equal(2)
   }
 
   test("Portfolio-level position merging") {
