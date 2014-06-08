@@ -2,9 +2,9 @@ organization := "com.miriamlaurel"
 
 name := "fxcore"
 
-version := "1.0"
+version := "1.1"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.0"
 
 libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.3",
