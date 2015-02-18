@@ -4,12 +4,12 @@ name := "fxcore"
 
 version := "1.1"
 
-scalaVersion := "2.11.0"
+scalaVersion := "2.11.5"
 
 libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.3",
   "org.joda" % "joda-convert" % "1.2",
-  "org.scalatest" %% "scalatest" % "2.1.5" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
 
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation", "-feature")

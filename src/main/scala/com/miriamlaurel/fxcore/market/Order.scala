@@ -18,6 +18,18 @@ case class Order(instrument: Instrument,
   require(amount > 0)
   require(price > 0)
 
-  override def compare(that: Order) = price compare that.price
+  override def hashCode(): Int = sourceId match {
+    case Some(x) => x.hashCode
+    case _ => super.hashCode()
+  }
+
+  override def equals(obj: scala.Any): Boolean = sourceId match {
+    case Some(x) => obj match {
+      case o: Order => o.sourceId.isDefined && o.sourceId.get.equals(x)
+    }
+    case _ => super.equals(obj)
+  }
+
+  override def compare(that: Order) = if (side == QuoteSide.Ask) price compare that.price else that.price compare price
   override def toString = "%s %f %s @%f".format(side.toString, amount.bigDecimal, instrument.toString, price.bigDecimal)
 }
