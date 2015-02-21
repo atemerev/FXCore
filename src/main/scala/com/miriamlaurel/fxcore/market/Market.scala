@@ -1,9 +1,7 @@
 package com.miriamlaurel.fxcore.market
 
-import scala.math.max
-import com.miriamlaurel.fxcore.asset.AssetClass
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.asset.Currency
+import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 import com.miriamlaurel.fxcore.instrument.Instrument
 import org.joda.time.DateTime
 

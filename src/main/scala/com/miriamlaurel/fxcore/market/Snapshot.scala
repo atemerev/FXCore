@@ -11,19 +11,19 @@ case class Snapshot(
   override val timestamp: DateTime) extends Timestamp {
 
   def this(instrument: Instrument, allOrders: List[Order]) =
-    this(instrument, allOrders, allOrders.map(_.timestamp).reduceLeft((ts1, ts2) => if (ts1.isBefore(ts2)) ts1 else ts2))
+    this(instrument, allOrders, DateTime.now())
 
   lazy val entries = allEntries.sorted
 
-  lazy val bids = entries.filter(_.side == QuoteSide.Bid).reverse
-  lazy val asks = entries.filter(_.side == QuoteSide.Ask)
+  lazy val bids = entries.filter(_.key.side == QuoteSide.Bid).reverse
+  lazy val asks = entries.filter(_.key.side == QuoteSide.Ask)
 
   lazy val bestBid: Option[BigDecimal] = if (bids.size > 0) Some(bids(0).price) else None
   lazy val bestAsk: Option[BigDecimal] = if (asks.size > 0) Some(asks(0).price) else None
 
   lazy val best = Quote(instrument, bestBid, bestAsk, timestamp)
 
-  def selectSource(source: Party): Snapshot = Snapshot(instrument, entries.filter(_.source == source), timestamp)
+  def selectSource(source: Party): Snapshot = Snapshot(instrument, entries.filter(_.key.party == source), timestamp)
 
   def isFull: Boolean = bids.size > 0 && asks.size > 0
 
@@ -74,8 +74,8 @@ object Snapshot {
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val orders = bidS.map(
-      n => new Order(instrument, QuoteSide.Bid, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts)) ++
-      askS.map(n => new Order(instrument, QuoteSide.Ask, BigDecimal(n._2), BigDecimal(n._1), Me, None, ts))
+      n => Order(Me, instrument, QuoteSide.Bid, "*", BigDecimal(n._2), BigDecimal(n._1))) ++
+      askS.map(n => Order(Me, instrument, QuoteSide.Ask, "*", BigDecimal(n._2), BigDecimal(n._1)))
     Snapshot(instrument, orders, ts)
   }
 

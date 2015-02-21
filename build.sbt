@@ -2,7 +2,7 @@ organization := "com.miriamlaurel"
 
 name := "fxcore"
 
-version := "1.1"
+version := "2.0"
 
 scalaVersion := "2.11.5"
 
