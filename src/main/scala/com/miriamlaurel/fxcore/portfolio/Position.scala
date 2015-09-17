@@ -27,21 +27,6 @@ case class Position(primary: Monetary,
                     override val id: UUID)
   extends Identity with Timestamp {
 
-  /*
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal) =
-    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter))
-
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID]) =
-    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching)
-
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long) =
-    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter), matching, timestamp)
-
-  def this(instrument: Instrument, price: BigDecimal, amount: BigDecimal, matching: Option[UUID], timestamp: Long, id: UUID) =
-    this(Monetary(amount, instrument.base), Monetary(-amount * price, instrument.counter),
-      matching, timestamp, id)
-  */
-
   /**
   If position's primary amount is positive (a long position), it's secondary amount should be negative,
   and vice versa.
