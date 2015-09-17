@@ -1,17 +1,17 @@
 package com.miriamlaurel.fxcore.market
 
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
-import org.joda.time.DateTime
+import java.time.Instant
 import com.miriamlaurel.fxcore.{Me, Timestamp}
 import com.miriamlaurel.fxcore.party.Party
 
 case class Snapshot(
   instrument: Instrument,
   allEntries: List[Order],
-  override val timestamp: DateTime) extends Timestamp {
+  override val timestamp: Instant) extends Timestamp {
 
   def this(instrument: Instrument, allOrders: List[Order]) =
-    this(instrument, allOrders, DateTime.now())
+    this(instrument, allOrders, Instant.now())
 
   lazy val entries = allEntries.sorted
 
@@ -68,7 +68,7 @@ object Snapshot {
   def fromCsv(csv: String): Snapshot = {
     def pair[A](l: List[A]): List[(A, A)] = l.grouped(2).collect {case List(a, b) => (a, b)}.toList
     val tokens = csv.split(",")
-    val ts = new DateTime(tokens(0).toLong)
+    val ts = Instant.ofEpochMilli(tokens(0).toLong)
     val instrument = CurrencyPair(tokens(1))
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
@@ -80,7 +80,7 @@ object Snapshot {
   }
 
   def toCsv(snapshot: Snapshot) = {
-    snapshot.timestamp.getMillis + "," + snapshot.instrument.toString + ",BIDS," +
+    snapshot.timestamp.toEpochMilli + "," + snapshot.instrument.toString + ",BIDS," +
             snapshot.bids.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
             ",ASKS," +
             snapshot.asks.map(o => o.price.toString + "," + o.amount.toString).mkString(",")

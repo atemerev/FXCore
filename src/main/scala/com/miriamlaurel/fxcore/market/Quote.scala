@@ -2,13 +2,13 @@ package com.miriamlaurel.fxcore.market
 
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
-import org.joda.time.DateTime
+import java.time.Instant
 
 case class Quote(
         instrument: Instrument,
         bid: Option[BigDecimal],
         ask: Option[BigDecimal],
-        override val timestamp: DateTime) extends Timestamp {
+        override val timestamp: Instant) extends Timestamp {
 
   val isFull: Boolean = bid.isDefined && ask.isDefined
 

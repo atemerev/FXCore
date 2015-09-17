@@ -1,7 +1,7 @@
 package com.miriamlaurel.fxcore
 
-import org.joda.time.DateTime
+import java.time.Instant
 
 trait Timestamp {
-  val timestamp: DateTime = DateTime.now()
+  val timestamp: Instant = Instant.now()
 }

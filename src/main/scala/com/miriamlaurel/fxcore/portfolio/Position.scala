@@ -1,7 +1,7 @@
 package com.miriamlaurel.fxcore.portfolio
 
 import java.util.UUID
-import org.joda.time.DateTime
+import java.time.Instant
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
 import com.miriamlaurel.fxcore.asset.AssetClass
@@ -23,7 +23,7 @@ Thus, a position has following fields:
 case class Position(primary: Monetary,
                     secondary: Monetary,
                     matching: Option[UUID],
-                    override val timestamp: DateTime,
+                    override val timestamp: Instant,
                     override val id: UUID)
   extends Identity with Timestamp {
 
@@ -153,7 +153,7 @@ case class Position(primary: Monetary,
 
     val pos: Option[Position] = if (f1 == Money.ZERO) None
     else
-      Some(Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset), None, DateTime.now(), UUID.randomUUID()))
+      Some(Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset), None, Instant.now(), UUID.randomUUID()))
     (pos, Money(e2, secondary.asset))
   }
 
@@ -207,7 +207,7 @@ object Position {
             price: BigDecimal,
             amount: BigDecimal,
             matching: Option[UUID] = None,
-            timestamp: DateTime = DateTime.now(),
+            timestamp: Instant = Instant.now(),
             id: UUID = UUID.randomUUID()): Position = Position(
     primary = Monetary(amount, instrument.base),
     secondary = Monetary(-amount * price, instrument.counter),
