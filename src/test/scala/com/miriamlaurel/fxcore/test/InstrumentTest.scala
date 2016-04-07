@@ -28,4 +28,10 @@ class InstrumentTest extends FunSuite with Matchers {
     MetalInstrument("XAU/USD") should equal(Instrument(Gold, Currency("USD")))
   }
 
+  test("basic cryptocurrencies test") {
+    Currency("ETH") should equal(Ether)
+    CurrencyPair("ETH/USD") should equal(Instrument(Ether, USD))
+    CurrencyPair("ETH/USD") should equal(Instrument(Currency("ETH"), Currency("USD")))
+    CurrencyPair("ETH/BTC") should equal(Instrument(Ether, Bitcoin))
+  }
 }

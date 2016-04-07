@@ -15,17 +15,17 @@ case class Snapshot(
 
   lazy val entries = allEntries.sorted
 
-  lazy val bids = entries.filter(_.key.side == QuoteSide.Bid).reverse
+  lazy val bids = entries.filter(_.key.side == QuoteSide.Bid)
   lazy val asks = entries.filter(_.key.side == QuoteSide.Ask)
 
-  lazy val bestBid: Option[BigDecimal] = if (bids.size > 0) Some(bids(0).price) else None
-  lazy val bestAsk: Option[BigDecimal] = if (asks.size > 0) Some(asks(0).price) else None
+  lazy val bestBid: Option[BigDecimal] = if (bids.nonEmpty) Some(bids.head.price) else None
+  lazy val bestAsk: Option[BigDecimal] = if (asks.nonEmpty) Some(asks.head.price) else None
 
   lazy val best = Quote(instrument, bestBid, bestAsk, timestamp)
 
   def selectSource(source: Party): Snapshot = Snapshot(instrument, entries.filter(_.key.party == source), timestamp)
 
-  def isFull: Boolean = bids.size > 0 && asks.size > 0
+  def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = {
     var sum = BigDecimal(0)
@@ -45,8 +45,8 @@ case class Snapshot(
     if (amount == BigDecimal(0)) best else {
       val sliceBid = slice(QuoteSide.Bid, amount)
       val sliceAsk = slice(QuoteSide.Ask, amount)
-      val bid = if (sliceBid.size > 0) Some(weightedAvg(sliceBid)) else None
-      val ask = if (sliceAsk.size > 0) Some(weightedAvg(sliceAsk)) else None
+      val bid = if (sliceBid.nonEmpty) Some(weightedAvg(sliceBid)) else None
+      val ask = if (sliceAsk.nonEmpty) Some(weightedAvg(sliceAsk)) else None
       Quote(instrument, bid, ask, timestamp)
     }
   }
@@ -56,9 +56,7 @@ case class Snapshot(
   override def toString = Snapshot.toCsv(this)
 
   private def weightedAvg(orders: List[Order]): BigDecimal =
-    orders.map(order => order.price * order.amount).reduceLeft(_ + _) /
-            orders.map(_.amount).reduceLeft(_ + _)
-
+    orders.map(order => order.price * order.amount).sum / orders.map(_.amount).sum
 }
 
 object Snapshot {
