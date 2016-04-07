@@ -20,10 +20,34 @@ package object fxcore {
   val NZD = Currency("NZD")
   val SEK = Currency("SEK")
   val NOK = Currency("NOK")
+
+  val Bitcoin = Currency("BTC")
+  val BTC = Bitcoin
+
+  val Litecoin = Currency("LTC")
+  val LTC = Litecoin
+
+  val Ether = Currency("ETH")
+  val ETH = Ether
+
+  val Dash = Currency("DASH")
+  val DASH = Dash
+
+  val Namecoin = Currency("NMC")
+  val NMC = Namecoin
+
+  val Stellar = Currency("STR")
+  val STR = Stellar
+
   val EURUSD = CurrencyPair("EUR/USD")
   val GBPUSD = CurrencyPair("GBP/USD")
   val USDJPY = CurrencyPair("USD/JPY")
   val USDCHF = CurrencyPair("USD/CHF")
+
+  val BTCUSD = CurrencyPair("BTC/USD")
+  val LTCUSD = CurrencyPair("LTC/USD")
+  val ETHUSD = CurrencyPair("ETH/USD")
+  val ETHBTC = CurrencyPair("ETH/BTC")
 
   def pipScale(cp: CurrencyPair) = cp.counter.pointScale + 2
 
