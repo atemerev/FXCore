@@ -1,12 +1,12 @@
 package com.miriamlaurel.fxcore.test
 
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.market.{QuoteSide, Market, Snapshot}
+import com.miriamlaurel.fxcore.market.{Market, OrderBook, QuoteSide}
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
 import com.miriamlaurel.fxcore.asset.Currency
 import com.miriamlaurel.fxcore.portfolio.{MergePositions, NonStrictPortfolio, Position, StrictPortfolio}
 import com.miriamlaurel.fxcore.accounting.Ledger
-import org.scalatest.{Matchers, FunSuite}
+import org.scalatest.{FunSuite, Matchers}
 
 class AccountingTest extends FunSuite with Matchers {
 
@@ -104,5 +104,5 @@ class AccountingTest extends FunSuite with Matchers {
   }
 
   def snapshot(instrument: String, bid: String, ask: String) =
-    Snapshot(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
+    OrderBook(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }

@@ -5,17 +5,17 @@ import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 import com.miriamlaurel.fxcore.instrument.Instrument
 import java.time.Instant
 
-case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
+case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
 
-  private val content = Map[Instrument, Snapshot](snapshots.map(l => (l.instrument, l)): _*)
+  private val content = Map[Instrument, OrderBook](snapshots.map(l => (l.instrument, l)): _*)
 
   lazy val timestamp = Instant.ofEpochMilli(snapshots.map(_.timestamp.toEpochMilli).max)
 
-  def apply(instrument: Instrument): Snapshot = content(instrument)
+  def apply(instrument: Instrument): OrderBook = content(instrument)
 
-  def snapshot(instrument: Instrument): Option[Snapshot] = content.get(instrument)
+  def snapshot(instrument: Instrument): Option[OrderBook] = content.get(instrument)
 
-  def <<(snapshot: Snapshot): Market = {
+  def <<(snapshot: OrderBook): Market = {
     val newContent = content + (snapshot.instrument -> snapshot)
     Market(newContent.values.toSeq)
   }
@@ -61,5 +61,5 @@ case class Market(snapshots: Seq[Snapshot], pivot: Currency = USD) {
 }
 
 object Market {
-  def apply(snapshots: Snapshot*): Market = Market(snapshots.toSeq)
+  def apply(snapshots: OrderBook*): Market = Market(snapshots.toSeq)
 }
