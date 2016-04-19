@@ -56,7 +56,7 @@ class OrderBook private(val instrument: Instrument,
       val newByKey = byKey - key
       if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, timestamp, newLine, asks, newByKey)
       else new OrderBook(instrument, timestamp, bids, newLine, newByKey)
-    case None ⇒ throw new NoSuchElementException(s"Order not found in the order book: $key")
+    case None ⇒ this
   }
 
   @tailrec
@@ -118,7 +118,6 @@ object OrderBook {
       askS.zipWithIndex.map(n ⇒ Order(Me, instrument, QuoteSide.Ask, n._2.toString, BigDecimal(n._1._2), BigDecimal(n._1._1)))
     OrderBook(ts, orders)
   }
-
 
   def toCsv(orderBook: OrderBook) = {
     orderBook.timestamp.toEpochMilli + "," + orderBook.instrument.toString + ",BIDS," +
