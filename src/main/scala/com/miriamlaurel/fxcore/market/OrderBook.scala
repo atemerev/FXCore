@@ -121,7 +121,7 @@ object OrderBook {
 
   def toCsv(orderBook: OrderBook) = {
     orderBook.timestamp.toEpochMilli + "," + orderBook.instrument.toString + ",BIDS," +
-      orderBook.bids.values.flatten.map(o ⇒ o._2.price.toString + "," + o._2.amount.toString).mkString(",") +
+      orderBook.bids.values.flatten.toSeq.reverse.map(o ⇒ o._2.price.toString + "," + o._2.amount.toString).mkString(",") +
       ",ASKS," +
       orderBook.asks.values.flatten.map(o ⇒ o._2.price.toString + "," + o._2.amount.toString).mkString(",")
   }
