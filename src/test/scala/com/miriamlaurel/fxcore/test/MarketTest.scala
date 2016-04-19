@@ -1,13 +1,12 @@
 package com.miriamlaurel.fxcore.test
 
-import org.scalatest.Matchers
-import org.scalatest.FunSuite
-import com.miriamlaurel.fxcore.market.{OrderBook, Market}
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
+import com.miriamlaurel.fxcore.market.{Market, OrderBook}
+import org.scalatest.{FunSuite, Matchers}
 
 /**
- * @author Alexander Temerev
- */
+  * @author Alexander Temerev
+  */
 class MarketTest extends FunSuite with Matchers {
   test("Trivial cases") {
     val snapshot = OrderBook("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25215,2000000,1.2522,1000000,ASKS,1.25245,2000000,1.25246,1000000")

@@ -1,11 +1,10 @@
 package com.miriamlaurel.fxcore.test
 
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.market.{Market, OrderBook, QuoteSide}
-import com.miriamlaurel.fxcore.instrument.CurrencyPair
 import com.miriamlaurel.fxcore.asset.Currency
+import com.miriamlaurel.fxcore.instrument.CurrencyPair
+import com.miriamlaurel.fxcore.market.{Market, OrderBook, QuoteSide}
 import com.miriamlaurel.fxcore.portfolio.{MergePositions, NonStrictPortfolio, Position, StrictPortfolio}
-import com.miriamlaurel.fxcore.accounting.Ledger
 import org.scalatest.{FunSuite, Matchers}
 
 class AccountingTest extends FunSuite with Matchers {

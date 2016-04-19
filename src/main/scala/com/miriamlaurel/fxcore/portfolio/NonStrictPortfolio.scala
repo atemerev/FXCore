@@ -1,17 +1,18 @@
 package com.miriamlaurel.fxcore.portfolio
 
 import java.util.UUID
-import com.miriamlaurel.fxcore.{Zilch, Money}
+
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.Quote
+import com.miriamlaurel.fxcore.{Money, Zilch}
 
 /**
-A "non-strict" portfolio allows multiple positions for the same instrument. This behavior is consistent with
-position handling by most market makers.
+  * A "non-strict" portfolio allows multiple positions for the same instrument. This behavior is consistent with
+  * position handling by most market makers.
   */
 class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UUID, Position]]) extends Portfolio {
 
-  def this() = this (Map())
+  def this() = this(Map())
 
   override lazy val positions: Iterable[Position] = details.flatMap(_._2.values)
 
@@ -79,9 +80,9 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
     val oldPosition = newPosition.matching match {
       case None ⇒ None
       case Some(uuid) ⇒ for (byInstrument <- details.get(newPosition.instrument);
-                              p <- byInstrument.get(uuid)) yield p
+                             p <- byInstrument.get(uuid)) yield p
     }
     val diff = newPosition diff oldPosition
-    (this(diff), diff)
+    (this (diff), diff)
   }
 }

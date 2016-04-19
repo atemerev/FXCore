@@ -1,8 +1,8 @@
 package com.miriamlaurel.fxcore.portfolio
 
 import com.miriamlaurel.fxcore.Money
-import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.accounting.Deal
+import com.miriamlaurel.fxcore.instrument.Instrument
 
 case class PortfolioDiff(acs: PortfolioAction*) {
 

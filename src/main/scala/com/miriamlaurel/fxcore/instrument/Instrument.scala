@@ -13,11 +13,14 @@ object Instrument {
   // Poor man's dependent types...
 
   def apply(base: Currency, counter: Currency): CurrencyPair = apply(base.asInstanceOf[AssetClass], counter.asInstanceOf[AssetClass]).asInstanceOf[CurrencyPair]
+
   def apply(base: Metal, counter: Currency): MetalInstrument = apply(base.asInstanceOf[AssetClass], counter.asInstanceOf[AssetClass]).asInstanceOf[MetalInstrument]
 }
 
 trait Instrument {
   def base: AssetClass
+
   def counter: AssetClass
+
   def reverse: Instrument = Instrument(counter, base)
 }

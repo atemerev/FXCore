@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore
 
-import com.miriamlaurel.fxcore.asset.{Currency, AssetClass}
+import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 
 sealed trait Money extends Ordered[Money] {
 
@@ -8,24 +8,39 @@ sealed trait Money extends Ordered[Money] {
   val ONE = BigDecimal(1)
 
   def amount: BigDecimal
+
   def +(that: Money): Money
+
   def -(that: Money): Money
+
   def *(that: BigDecimal): Money
+
   def /(that: BigDecimal): Money
+
   def setScale(scale: Int): Money
+
   def unary_- : Money
+
   def abs: Money
 }
 
 case object Zilch extends Money {
   val amount: BigDecimal = ZERO
+
   def /(that: BigDecimal) = Zilch
+
   def *(that: BigDecimal) = Zilch
+
   def -(that: Money) = -that
+
   def +(that: Money) = that
+
   def setScale(scale: Int) = Zilch
+
   def abs = Zilch
+
   def unary_- = Zilch
+
   def compare(that: Money) = that match {
     case Zilch ⇒ 0
     case m: Monetary ⇒ if (m.amount > 0) -1 else 1

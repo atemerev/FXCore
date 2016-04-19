@@ -4,8 +4,8 @@ import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.party.Party
 
 case class Order(key: OrderKey,
-                       amount: BigDecimal,
-                       price: BigDecimal) extends Ordered[Order] {
+                 amount: BigDecimal,
+                 price: BigDecimal) extends Ordered[Order] {
 
   require(amount > 0)
   require(price > 0)

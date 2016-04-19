@@ -1,9 +1,9 @@
 package com.miriamlaurel.fxcore.portfolio
 
-import com.miriamlaurel.fxcore.asset.AssetClass
-import com.miriamlaurel.fxcore.market.Market
 import com.miriamlaurel.fxcore.Money
+import com.miriamlaurel.fxcore.asset.AssetClass
 import com.miriamlaurel.fxcore.instrument.Instrument
+import com.miriamlaurel.fxcore.market.Market
 
 /*!#Portfolio
 There can be many different types of portfolios, but all they have common properties summarized by this trait:

@@ -1,20 +1,21 @@
 package com.miriamlaurel.fxcore.market
 
-import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
 import java.time.Instant
 
+import com.miriamlaurel.fxcore._
+import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
+
 case class Quote(
-        instrument: Instrument,
-        bid: Option[BigDecimal],
-        ask: Option[BigDecimal],
-        override val timestamp: Instant) extends Timestamp {
+                  instrument: Instrument,
+                  bid: Option[BigDecimal],
+                  ask: Option[BigDecimal],
+                  override val timestamp: Instant) extends Timestamp {
 
   val isFull: Boolean = bid.isDefined && ask.isDefined
 
   lazy val average: Option[BigDecimal] = if (isFull) Some((bid.get + ask.get) / 2) else None
 
-  lazy val spread: Option[BigDecimal] = for(b <- bid; a <- ask) yield a - b
+  lazy val spread: Option[BigDecimal] = for (b <- bid; a <- ask) yield a - b
 
   lazy val spreadPips: Option[BigDecimal] = instrument match {
     case cp: CurrencyPair ⇒ for (s <- spread) yield s / pipValue(cp)

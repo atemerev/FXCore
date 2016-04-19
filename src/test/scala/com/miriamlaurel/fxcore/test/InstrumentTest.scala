@@ -1,14 +1,13 @@
 package com.miriamlaurel.fxcore.test
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.asset.{Gold, Currency}
-import com.miriamlaurel.fxcore.instrument.{MetalInstrument, Instrument, CurrencyPair}
+import com.miriamlaurel.fxcore.asset.{Currency, Gold}
+import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument, MetalInstrument}
+import org.scalatest.{FunSuite, Matchers}
 
 /**
- * @author Alexander Temerev
- */
+  * @author Alexander Temerev
+  */
 class InstrumentTest extends FunSuite with Matchers {
 
   test("currencies and metals should compare properly to each other") {

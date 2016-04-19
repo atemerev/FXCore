@@ -6,7 +6,7 @@ object Metal {
     case "XAG" ⇒ Silver
     case "XPT" ⇒ Platinum
     case "XPD" ⇒ Palladium
-    case _     ⇒ throw new IllegalArgumentException("Metal code is not recognized: " + code)
+    case _ ⇒ throw new IllegalArgumentException("Metal code is not recognized: " + code)
   }
 }
 
