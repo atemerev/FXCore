@@ -3,15 +3,15 @@ package com.miriamlaurel.fxcore.portfolio
 import com.miriamlaurel.fxcore.instrument.Instrument
 
 /**
-A "strict" portfolio doesn't store different positions for the same instrument; only aggregate positions are
-stored. This behavior is consistent with position handling by most ECNs.
-
-Even more "stricter" portfolio implementation is possible for forex market, which automatically collapses positions
-by currencies in its instruments' currency pairs; for example, EUR/CHF can be splitted to EUR/USD and USD/CHF
-positions. This "stricter" portfolio is normally used by banks, but we don't need it at the moment.
+  * A "strict" portfolio doesn't store different positions for the same instrument; only aggregate positions are
+  * stored. This behavior is consistent with position handling by most ECNs.
+  * *
+  * Even more "stricter" portfolio implementation is possible for forex market, which automatically collapses positions
+  * by currencies in its instruments' currency pairs; for example, EUR/CHF can be splitted to EUR/USD and USD/CHF
+  * positions. This "stricter" portfolio is normally used by banks, but we don't need it at the moment.
   */
 class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Portfolio {
-  def this() = this (Map())
+  def this() = this(Map())
 
   lazy val positions = map.values
 
@@ -19,15 +19,13 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
     var newMap = map
     for (action <- diff.actions) {
       action match {
-        case AddPosition(p) => {
+        case AddPosition(p) ⇒
           require(!(newMap contains p.instrument))
           newMap = newMap + (p.instrument -> p)
-        }
-        case RemovePosition(p) => {
+        case RemovePosition(p) ⇒
           require(newMap contains p.instrument)
           newMap = newMap - p.instrument
-        }
-        case _ => // Ignore
+        case _ ⇒ // Ignore
       }
     }
     new StrictPortfolio(newMap)
@@ -36,12 +34,12 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
   def <<(newPosition: Position): (StrictPortfolio, PortfolioDiff) = {
     val oldPosition = map.get(newPosition.instrument)
     val diff = newPosition diff oldPosition
-    (this(diff), diff)
+    (this (diff), diff)
   }
 
   def positions(instrument: Instrument): Iterable[Position] = position(instrument) match {
-    case Some(pos) => List(pos)
-    case None => List()
+    case Some(pos) ⇒ List(pos)
+    case None ⇒ List()
   }
 
   /*!

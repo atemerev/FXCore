@@ -4,9 +4,9 @@ import com.miriamlaurel.fxcore.asset._
 
 object Instrument {
   def apply(base: AssetClass, counter: AssetClass) = (base, counter) match {
-    case (b: Currency, c: Currency) => CurrencyPair(b, c)
-    case (b: Metal, c: Currency) => MetalInstrument(b, c)
-    case _ => throw new IllegalArgumentException("Asset classes not recognized: %s to %s".format(
+    case (b: Currency, c: Currency) ⇒ CurrencyPair(b, c)
+    case (b: Metal, c: Currency) ⇒ MetalInstrument(b, c)
+    case _ ⇒ throw new IllegalArgumentException("Asset classes not recognized: %s to %s".format(
       base.getClass.getSimpleName, counter.getClass.getSimpleName))
   }
 

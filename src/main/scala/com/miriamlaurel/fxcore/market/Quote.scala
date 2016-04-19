@@ -17,8 +17,8 @@ case class Quote(
   lazy val spread: Option[BigDecimal] = for(b <- bid; a <- ask) yield a - b
 
   lazy val spreadPips: Option[BigDecimal] = instrument match {
-    case cp: CurrencyPair => for (s <- spread) yield s / pipValue(cp)
-    case _ => None
+    case cp: CurrencyPair ⇒ for (s <- spread) yield s / pipValue(cp)
+    case _ ⇒ None
   }
 
   def apply(side: QuoteSide.Value): Option[BigDecimal] = value(side)
@@ -42,7 +42,7 @@ object QuoteSide extends Enumeration {
   val Bid, Ask = Value
 
   def reverse(side: QuoteSide.Value): QuoteSide.Value = side match {
-    case Bid => Ask
-    case Ask => Bid
+    case Bid ⇒ Ask
+    case Ask ⇒ Bid
   }
 }

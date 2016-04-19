@@ -1,22 +1,23 @@
 package com.miriamlaurel.fxcore.portfolio
 
-import java.util.UUID
 import java.time.Instant
+import java.util.UUID
+
 import com.miriamlaurel.fxcore._
-import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
-import com.miriamlaurel.fxcore.asset.AssetClass
-import com.miriamlaurel.fxcore.market.{QuoteSide, Quote, Market}
 import com.miriamlaurel.fxcore.accounting.Deal
+import com.miriamlaurel.fxcore.asset.AssetClass
+import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
+import com.miriamlaurel.fxcore.market.{Market, Quote, QuoteSide}
 
 /** Position
-This is the implementation of a position taken in some asset against the other. For example, it can be
-"-100 EUR / 137 USD", which probably means (dependent on context) that 100 euro had been short-sold for 137 US dollars.
-Thus, a position has following fields:
-
+  * This is the implementation of a position taken in some asset against the other. For example, it can be
+  * "-100 EUR / 137 USD", which probably means (dependent on context) that 100 euro had been short-sold for 137 US dollars.
+  * Thus, a position has following fields:
+  *
   * primary: amount in primary asset, like "-100 EUR" in the example above;
   * secondary: amount in secondary asset, like "137 USD" in the example above;
   * matching: an UUID of a matching position in some portfolio. In some contexts, if a position is applied to portfolio
-  with matching position, these positions will be merged;
+  * with matching position, these positions will be merged;
   * timestamp: position's creation time;
   * uuid: this position's UUID.
   */
@@ -25,11 +26,11 @@ case class Position(primary: Monetary,
                     matching: Option[UUID],
                     override val timestamp: Instant,
                     override val id: UUID)
-  extends Identity with Timestamp {
+  extends Id with Timestamp {
 
   /**
-  If position's primary amount is positive (a long position), it's secondary amount should be negative,
-  and vice versa.
+    * If position's primary amount is positive (a long position), it's secondary amount should be negative,
+    * and vice versa.
     */
   require(primary.amount.signum != secondary.amount.signum)
 
@@ -93,8 +94,8 @@ case class Position(primary: Monetary,
   For currency positions, it may be convenient to express profit/loss value in pips.
    */
   def profitLossPips(price: BigDecimal): BigDecimal = instrument match {
-    case cp: CurrencyPair => asPips(cp, (price - this.price) * primary.amount.signum)
-    case _ => throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
+    case cp: CurrencyPair ⇒ asPips(cp, (price - this.price) * primary.amount.signum)
+    case _ ⇒ throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
   }
 
   def profitLossPips(quote: Quote): Option[BigDecimal] = {
@@ -148,19 +149,18 @@ case class Position(primary: Monetary,
    */
   def diff(oldPosition: Option[Position]): PortfolioDiff = oldPosition match {
     // If no old position found for this instrument -> add new position
-    case None => new PortfolioDiff(AddPosition(this))
+    case None ⇒ new PortfolioDiff(AddPosition(this))
     // If old position is found...
-    case Some(oldP) => {
+    case Some(oldP) ⇒
       // Merge old and new positions
       val (merged, profitLoss) = oldP merge this
       merged match {
         // If merged positions collapsed -> remove old position, add new finished deal
-        case None => {
+        case None ⇒
           val deal = Deal(oldP, this.price, this.timestamp, profitLoss)
           new PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
-        }
         // If merging produced new position...
-        case Some(remainingPosition) => {
+        case Some(remainingPosition) ⇒
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
             new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
@@ -169,9 +169,7 @@ case class Position(primary: Monetary,
             val deal = partialCloseDeal(oldP)
             new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition), CreateDeal(deal))
           }
-        }
       }
-    }
   }
 
   private def partialCloseDeal(oldPosition: Position): Deal = {
@@ -209,23 +207,23 @@ object PositionSide extends Enumeration {
   What quote side to use to open a position?
    */
   def open(side: PositionSide.Value): QuoteSide.Value = side match {
-    case Long => QuoteSide.Ask
-    case Short => QuoteSide.Bid
+    case Long ⇒ QuoteSide.Ask
+    case Short ⇒ QuoteSide.Bid
   }
 
   /*!
   What quote side to use to close a position?
    */
   def close(side: PositionSide.Value): QuoteSide.Value = side match {
-    case Long => QuoteSide.Bid
-    case Short => QuoteSide.Ask
+    case Long ⇒ QuoteSide.Bid
+    case Short ⇒ QuoteSide.Ask
   }
 
   /*!
   Reverse the position side.
    */
   def reverse(side: PositionSide.Value): PositionSide.Value = side match {
-    case Long => PositionSide.Short
-    case Short => PositionSide.Long
+    case Long ⇒ PositionSide.Short
+    case Short ⇒ PositionSide.Long
   }
 }

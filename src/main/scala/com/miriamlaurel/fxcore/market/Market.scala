@@ -7,7 +7,7 @@ import java.time.Instant
 
 case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
 
-  private val content = Map[Instrument, OrderBook](snapshots.map(l => (l.instrument, l)): _*)
+  private val content = Map[Instrument, OrderBook](snapshots.map(l ⇒ (l.instrument, l)): _*)
 
   lazy val timestamp = Instant.ofEpochMilli(snapshots.map(_.timestamp.toEpochMilli).max)
 
@@ -43,8 +43,8 @@ case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
               to: AssetClass,
               side: QuoteSide.Value,
               amount: BigDecimal = 0): Option[Money] = from match {
-      case Zilch => Some(Zilch)
-      case m: Monetary => for (q <- quote(Instrument(m.asset, to), amount);
+      case Zilch ⇒ Some(Zilch)
+      case m: Monetary ⇒ for (q <- quote(Instrument(m.asset, to), amount);
          p <- q.apply(side)) yield Money(p * m.amount, to)
   }
 
