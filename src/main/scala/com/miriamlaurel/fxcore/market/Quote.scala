@@ -37,6 +37,12 @@ case class Quote(
     val nAsk = for (a <- ask) yield rescale(a, pipScale(instrument.asInstanceOf[CurrencyPair]) + fractionDigits)
     Quote(instrument, nBid, nAsk, timestamp)
   }
+
+  override def toString: String = {
+    val bidS = (for (b <- bid) yield b.toString()).getOrElse("?")
+    val askS = (for (a <- ask) yield a.toString()).getOrElse("?")
+    "%d %s %s/%s".format(timestamp.toEpochMilli, instrument, bidS, askS)
+  }
 }
 
 object QuoteSide extends Enumeration {

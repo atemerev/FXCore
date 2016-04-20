@@ -113,8 +113,9 @@ object OrderBook {
     val asksIndex = tokens.indexOf("ASKS")
     val bidS: List[(String, String)] = pair(tokens.slice(3, asksIndex).toList)
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
+    val bidSize = bidS.size
     val orders = bidS.zipWithIndex.map(
-      n ⇒ Order(Me, instrument, QuoteSide.Bid, n._2.toString, BigDecimal(n._1._2), BigDecimal(n._1._1))) ++
+      n ⇒ Order(Me, instrument, QuoteSide.Bid, (bidSize - n._2 - 1).toString, BigDecimal(n._1._2), BigDecimal(n._1._1))) ++
       askS.zipWithIndex.map(n ⇒ Order(Me, instrument, QuoteSide.Ask, n._2.toString, BigDecimal(n._1._2), BigDecimal(n._1._1)))
     OrderBook(ts, orders)
   }
