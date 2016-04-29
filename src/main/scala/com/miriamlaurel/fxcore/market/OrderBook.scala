@@ -3,6 +3,7 @@ package com.miriamlaurel.fxcore.market
 import java.time.Instant
 
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
+import com.miriamlaurel.fxcore.party.Party
 import com.miriamlaurel.fxcore.{Me, Timestamp}
 
 import scala.annotation.tailrec
@@ -64,6 +65,12 @@ class OrderBook private(val instrument: Instrument,
     val line = if (side == QuoteSide.Bid) bids else asks
     val first = line.head._2.head._2
     if ((taken + first.amount) >= amount) first :: acc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc)
+  }
+
+  def replaceParty(party: Party, theirBook: OrderBook): OrderBook = {
+    val filteredByParty = theirBook.byKey.filter(party == _._1.party)
+    val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
+    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b + (o, theirBook.timestamp))
   }
 
   def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = slice(side, amount, BigDecimal(0), List.empty)
