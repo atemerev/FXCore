@@ -60,6 +60,11 @@ class OrderBook private(val instrument: Instrument,
     case None ⇒ this
   }
 
+  def -(orderId: String): OrderBook = {
+    val toRemove = byKey.keys.filter(_.id == orderId)
+    toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
+  }
+
   @tailrec
   private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
