@@ -12,7 +12,7 @@ class OrderBook private(val instrument: Instrument,
                         override val timestamp: Instant,
                         val bids: SortedMap[BigDecimal, Map[OrderKey, Order]] = SortedMap()(Ordering.BigDecimal.reverse),
                         val asks: SortedMap[BigDecimal, Map[OrderKey, Order]] = SortedMap()(Ordering.BigDecimal),
-                        byKey: Map[OrderKey, Order] = Map.empty) extends Timestamp {
+                        val byKey: Map[OrderKey, Order] = Map.empty) extends Timestamp {
 
   lazy val bestBid: Option[BigDecimal] = for (h <- bids.headOption) yield h._1
   lazy val bestAsk: Option[BigDecimal] = for (h <- asks.headOption) yield h._1
