@@ -94,6 +94,18 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
+  def quoteSpread(amount: BigDecimal): Quote = {
+    require(amount >= 0)
+    if (amount == BigDecimal(0)) best
+    else {
+      val sliceBid = slice(QuoteSide.Bid, amount)
+      val sliceAsk = slice(QuoteSide.Ask, amount)
+      val bid = if (sliceBid.nonEmpty) Some(sliceBid.head.price) else None
+      val ask = if (sliceAsk.nonEmpty) Some(sliceAsk.head.price) else None
+      Quote(instrument, bid, ask, timestamp)
+    }
+  }
+
   override def toString = OrderBook.toCsv(this)
 
   private def weightedAvg(orders: List[Order]): BigDecimal =
