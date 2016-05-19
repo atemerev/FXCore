@@ -65,34 +65,45 @@ class OrderBook private(val instrument: Instrument,
     toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
   }
 
-  @tailrec
-  private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order]): List[Order] = {
-    val line = if (side == QuoteSide.Bid) bids else asks
-    val first = line.head._2.head._2
-    if ((taken + first.amount) >= amount) first :: acc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc)
-  }
-
   def replaceParty(party: Party, theirBook: OrderBook): OrderBook = {
     val filteredByParty = theirBook.byKey.filter(party == _._1.party)
     val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
     filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b + (o, theirBook.timestamp))
   }
 
-  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = slice(side, amount, BigDecimal(0), List.empty)
+  @tailrec
+  private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order], excludeId: Option[String]): List[Order] = {
+    val line = if (side == QuoteSide.Bid) bids else asks
+    val first = line.head._2.head._2
+    val newAcc = excludeId match {
+      case Some(id) => if (id == first.key.id) acc else first :: acc
+      case None => first :: acc
+    }
+    if ((taken + first.amount) >= amount) newAcc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
+  }
+
+  private def slice(side: QuoteSide.Value, amount: BigDecimal, excludeId: Option[String]): List[Order] = slice(side, amount, BigDecimal(0), List.empty, excludeId)
+
+  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = slice(side, amount, BigDecimal(0), List.empty, None)
+
+  def slice(side: QuoteSide.Value, amount: BigDecimal, excludeId: String): List[Order] = slice(side, amount, BigDecimal(0), List.empty, Some(excludeId))
 
   def trim(amount: BigDecimal): OrderBook = OrderBook(timestamp, slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount))
 
-  def quote(amount: BigDecimal): Quote = {
+  private def quote(amount: BigDecimal, excludeId: Option[String]): Quote = {
     require(amount >= 0)
     if (amount == BigDecimal(0)) best
     else {
-      val sliceBid = slice(QuoteSide.Bid, amount)
-      val sliceAsk = slice(QuoteSide.Ask, amount)
+      val sliceBid = slice(QuoteSide.Bid, amount, excludeId)
+      val sliceAsk = slice(QuoteSide.Ask, amount, excludeId)
       val bid = if (sliceBid.nonEmpty) Some(weightedAvg(sliceBid)) else None
       val ask = if (sliceAsk.nonEmpty) Some(weightedAvg(sliceAsk)) else None
       Quote(instrument, bid, ask, timestamp)
     }
   }
+
+  def quote(amount: BigDecimal): Quote = quote(amount, None)
+  def quote(amount: BigDecimal, excludeId: String): Quote = quote(amount, Some(excludeId))
 
   def quoteSpread(amount: BigDecimal): Quote = {
     require(amount >= 0)
