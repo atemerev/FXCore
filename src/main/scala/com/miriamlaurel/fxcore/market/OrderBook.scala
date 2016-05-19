@@ -105,17 +105,20 @@ class OrderBook private(val instrument: Instrument,
   def quote(amount: BigDecimal): Quote = quote(amount, None)
   def quote(amount: BigDecimal, excludeId: String): Quote = quote(amount, Some(excludeId))
 
-  def quoteSpread(amount: BigDecimal): Quote = {
+  private def quoteSpread(amount: BigDecimal, excludeId: Option[String]): Quote = {
     require(amount >= 0)
     if (amount == BigDecimal(0)) best
     else {
-      val sliceBid = slice(QuoteSide.Bid, amount)
-      val sliceAsk = slice(QuoteSide.Ask, amount)
+      val sliceBid = slice(QuoteSide.Bid, amount, excludeId)
+      val sliceAsk = slice(QuoteSide.Ask, amount, excludeId)
       val bid = if (sliceBid.nonEmpty) Some(sliceBid.head.price) else None
       val ask = if (sliceAsk.nonEmpty) Some(sliceAsk.head.price) else None
       Quote(instrument, bid, ask, timestamp)
     }
   }
+
+  def quoteSpread(amount: BigDecimal): Quote = quoteSpread(amount, None)
+  def quoteSpread(amount: BigDecimal, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
 
   override def toString = OrderBook.toCsv(this)
 
