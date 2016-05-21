@@ -14,9 +14,9 @@ case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
 
   def apply(instrument: Instrument): OrderBook = content(instrument)
 
-  def snapshot(instrument: Instrument): Option[OrderBook] = content.get(instrument)
+  def get(instrument: Instrument): Option[OrderBook] = content.get(instrument)
 
-  def <<(snapshot: OrderBook): Market = {
+  def +(snapshot: OrderBook): Market = {
     val newContent = content + (snapshot.instrument -> snapshot)
     Market(newContent.values.toSeq)
   }
@@ -26,19 +26,19 @@ case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
       Some(Quote(instrument, Some(1), Some(1), timestamp))
     else if (content.contains(instrument)) Some(apply(instrument).quote(amount))
     else if (content.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse)
-    else {
-      for (a <- quoteToPivot(instrument.base);
-           b <- quoteToPivot(instrument.counter);
-           x <- Some(if (isReverse(a.instrument)) a.reverse else a);
-           y <- Some(if (isStraight(b.instrument)) b.reverse else b);
-           aBid <- x.bid;
-           bBid <- y.bid;
-           aAsk <- x.ask;
-           bAsk <- y.ask;
-           bid <- Some(aBid * bBid);
-           ask <- Some(aAsk * bAsk)
-      ) yield Quote(instrument, Some(bid), Some(ask), Instant.ofEpochMilli(a.timestamp.toEpochMilli max b.timestamp.toEpochMilli))
-    }
+    else for {
+      a <- quoteToPivot(instrument.base)
+      b <- quoteToPivot(instrument.counter)
+      x <- Some(if (isReverse(a.instrument)) a.reverse else a)
+      y <- Some(if (isStraight(b.instrument)) b.reverse else b)
+      aBid <- x.bid
+      bBid <- y.bid
+      aAsk <- x.ask
+      bAsk <- y.ask
+      bid <- Some(aBid * bBid)
+      ask <- Some(aAsk * bAsk)
+      timestamp = Instant.ofEpochMilli(a.timestamp.toEpochMilli max b.timestamp.toEpochMilli)
+    } yield Quote(instrument, Some(bid), Some(ask), timestamp)
   }
 
   def convert(from: Money,
@@ -53,8 +53,8 @@ case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
   private def quoteToPivot(asset: AssetClass): Option[Quote] = {
     val straight = Instrument(asset, pivot)
     val reverse = Instrument(pivot, asset)
-    if (snapshot(straight).isDefined) Some(apply(straight).best)
-    else if (snapshot(reverse).isDefined) Some(apply(reverse).best) else None
+    if (get(straight).isDefined) Some(apply(straight).best)
+    else if (get(reverse).isDefined) Some(apply(reverse).best) else None
   }
 
   private def isStraight(instrument: Instrument) = pivot == instrument.counter
