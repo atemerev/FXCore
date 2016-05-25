@@ -74,12 +74,14 @@ class OrderBook private(val instrument: Instrument,
   @tailrec
   private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
-    val first = line.head._2.head._2
-    val newAcc = excludeId match {
-      case Some(id) => if (id == first.key.id) acc else first :: acc
-      case None => first :: acc
+    if (line.isEmpty) acc else {
+      val first = line.head._2.head._2
+      val newAcc = excludeId match {
+        case Some(id) => if (id == first.key.id) acc else first :: acc
+        case None => first :: acc
+      }
+      if ((taken + first.amount) >= amount) newAcc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
     }
-    if ((taken + first.amount) >= amount) newAcc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
   }
 
   private def slice(side: QuoteSide.Value, amount: BigDecimal, excludeId: Option[String]): List[Order] = slice(side, amount, BigDecimal(0), List.empty, excludeId)
