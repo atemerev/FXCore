@@ -92,6 +92,13 @@ class OrderBook private(val instrument: Instrument,
 
   def trim(amount: BigDecimal): OrderBook = OrderBook(timestamp, slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount))
 
+  def trimLength(maxSize: Int): OrderBook = {
+    val bids = this.bids.take(maxSize)
+    val asks = this.asks.take(maxSize)
+    val byKey = this.byKey -- bids.values.flatten.map(_._1) -- asks.values.flatten.map(_._1)
+    new OrderBook(this.instrument, this.timestamp, bids, asks, byKey)
+  }
+
   private def quote(amount: BigDecimal, excludeId: Option[String]): Quote = {
     require(amount >= 0)
     if (amount == BigDecimal(0)) best
