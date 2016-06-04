@@ -6,26 +6,19 @@ import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 import com.miriamlaurel.fxcore.instrument.Instrument
 
-case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
+case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, timestamp: Instant = Instant.EPOCH) {
 
-  private val content = Map[Instrument, OrderBook](snapshots.map(l ⇒ (l.instrument, l)): _*)
+  def apply(instrument: Instrument): OrderBook = books(instrument)
 
-  lazy val timestamp = Instant.ofEpochMilli(snapshots.map(_.timestamp.toEpochMilli).max)
+  def get(instrument: Instrument): Option[OrderBook] = books.get(instrument)
 
-  def apply(instrument: Instrument): OrderBook = content(instrument)
-
-  def get(instrument: Instrument): Option[OrderBook] = content.get(instrument)
-
-  def +(snapshot: OrderBook): Market = {
-    val newContent = content + (snapshot.instrument -> snapshot)
-    Market(newContent.values.toSeq)
-  }
+  def +(snapshot: OrderBook): Market = copy(books = books + (snapshot.instrument -> snapshot), timestamp = snapshot.timestamp)
 
   def quote(instrument: Instrument, amount: BigDecimal = 0): Option[Quote] = {
     if (instrument.base == instrument.counter)
       Some(Quote(instrument, Some(1), Some(1), timestamp))
-    else if (content.contains(instrument)) Some(apply(instrument).quote(amount))
-    else if (content.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse)
+    else if (books.contains(instrument)) Some(apply(instrument).quote(amount))
+    else if (books.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse)
     else for {
       a <- quoteToPivot(instrument.base)
       b <- quoteToPivot(instrument.counter)
@@ -63,5 +56,5 @@ case class Market(snapshots: Seq[OrderBook], pivot: Currency = USD) {
 }
 
 object Market {
-  def apply(snapshots: OrderBook*): Market = Market(snapshots.toSeq)
+  def apply(snapshots: OrderBook*): Market = Market(snapshots.map(s => s.instrument -> s).toMap)
 }
