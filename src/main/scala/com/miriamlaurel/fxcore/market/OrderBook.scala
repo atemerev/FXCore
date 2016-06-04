@@ -148,7 +148,7 @@ object OrderBook {
 
   def apply(orders: Iterable[Order]): OrderBook = apply(Instant.now(), orders)
 
-  def apply(orders: (Order)*): OrderBook = apply(orders: _*)
+  def apply(orders: Order*): OrderBook = apply(orders.toList)
 
   def apply(s: String) = fromCsv(s)
 
