@@ -78,6 +78,41 @@ class OrderBook private(val instrument: Instrument,
     filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder (o, theirBook.timestamp))
   }
 
+  def diff(prev: OrderBook): Iterable[OrderOp] = {
+    @tailrec
+    def compare(side: QuoteSide.Value, remainingCurrent: Iterable[Order], remainingPrev: Iterable[Order], acc: List[OrderOp]): List[OrderOp] = {
+      if (remainingCurrent.isEmpty && remainingPrev.isEmpty) {
+        acc
+      } else if (remainingCurrent.isEmpty && remainingPrev.nonEmpty) {
+        compare(side, remainingCurrent, remainingPrev.tail, RemoveOrder(remainingPrev.head.key, timestamp) :: acc)
+      } else if (remainingCurrent.nonEmpty && remainingPrev.isEmpty) {
+        compare(side, remainingCurrent.tail, remainingPrev, AddOrder(remainingCurrent.head, timestamp) :: acc)
+      } else {
+        val current = remainingCurrent.head
+        val prev = remainingPrev.head
+        if (current.price == prev.price && current.amount == prev.amount) {
+          compare(side, remainingCurrent.tail, remainingPrev.tail, acc)
+        } else if (current.price == prev.price) {
+          compare(side, remainingCurrent.tail, remainingPrev.tail, RemoveOrder(prev.key, timestamp) :: (AddOrder(current, timestamp) :: acc))
+        } else if (side == QuoteSide.Bid && current.price > prev.price || side == QuoteSide.Ask && current.price < prev.price) {
+          compare(side, remainingCurrent.tail, remainingPrev, AddOrder(current, timestamp) :: acc)
+        } else if (side == QuoteSide.Bid && current.price < prev.price || side == QuoteSide.Ask && current.price > prev.price) {
+          compare(side, remainingCurrent, remainingPrev.tail, RemoveOrder(prev.key, timestamp) :: acc)
+        } else {
+          throw new IllegalStateException("Should not happen: all possible order arrangements in compared books should be accounted for...")
+        }
+      }
+    }
+
+    val currentBids = this.bids.values.flatMap(_.values)
+    val prevBids = prev.bids.values.flatMap(_.values)
+    val currentAsks = this.asks.values.flatMap(_.values)
+    val prevAsks = prev.asks.values.flatMap(_.values)
+    val bidOps = compare(QuoteSide.Bid, currentBids, prevBids, List.empty)
+    val askOps = compare(QuoteSide.Ask, currentAsks, prevAsks, List.empty)
+    bidOps ::: askOps
+  }
+
   @tailrec
   private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
