@@ -21,7 +21,14 @@ class OrderBook private(val instrument: Instrument,
 
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
-  def +(order: Order, timestamp: Instant): OrderBook = {
+  def apply(op: OrderOp): OrderBook = op match {
+    case AddOrder(order, ts) ⇒ this.addOrder(order, ts)
+    case ChangeOrder(order, ts) ⇒ this.addOrder(order, ts)
+    case RemoveOrder(key, ts) ⇒ this removeOrderById key.id
+    case ReplaceParty(party, partyBook, _, _) ⇒ this.replaceParty(party, partyBook)
+  }
+
+  def addOrder(order: Order, timestamp: Instant): OrderBook = {
     require(instrument == order.key.instrument, "Order instrument should match order book instrument")
     val line = if (order.key.side == QuoteSide.Bid) bids else asks
     val newTimestamp = if (this.timestamp.compareTo(timestamp) > 0) this.timestamp else timestamp
@@ -49,7 +56,7 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
-  def -(key: OrderKey): OrderBook = byKey.get(key) match {
+  def removeOrder(key: OrderKey): OrderBook = byKey.get(key) match {
     case Some(order) ⇒
       val line = if (order.key.side == QuoteSide.Bid) bids else asks
       val removedOld = line(order.price) - key
@@ -60,15 +67,15 @@ class OrderBook private(val instrument: Instrument,
     case None ⇒ this
   }
 
-  def -(orderId: String): OrderBook = {
+  def removeOrderById(orderId: String): OrderBook = {
     val toRemove = byKey.keys.filter(_.id == orderId)
-    toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
+    toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
   }
 
   def replaceParty(party: Party, theirBook: OrderBook): OrderBook = {
     val filteredByParty = theirBook.byKey.filter(party == _._1.party)
-    val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b - k)
-    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b + (o, theirBook.timestamp))
+    val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
+    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder (o, theirBook.timestamp))
   }
 
   @tailrec
@@ -77,10 +84,10 @@ class OrderBook private(val instrument: Instrument,
     if (line.isEmpty) acc else {
       val first = line.head._2.head._2
       val newAcc = excludeId match {
-        case Some(id) => if (id == first.key.id) acc else first :: acc
-        case None => first :: acc
+        case Some(id) ⇒ if (id == first.key.id) acc else first :: acc
+        case None ⇒ first :: acc
       }
-      if ((taken + first.amount) >= amount) newAcc else (this - first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
+      if ((taken + first.amount) >= amount) newAcc else (this removeOrder first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
     }
   }
 
@@ -142,7 +149,7 @@ object OrderBook {
   def apply(timestamp: Instant, orders: Iterable[Order]): OrderBook = orders.headOption match {
     case Some(order) ⇒
       val start: OrderBook = empty(order.key.instrument)
-      orders.foldLeft(start)((a: OrderBook, b: Order) ⇒ a.+(b, timestamp))
+      orders.foldLeft(start)((a: OrderBook, b: Order) ⇒ a.addOrder(b, timestamp))
     case None ⇒ throw new IllegalArgumentException("Can't make an order book from an empty list")
   }
 

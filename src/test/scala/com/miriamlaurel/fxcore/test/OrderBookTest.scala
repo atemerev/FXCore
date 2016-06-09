@@ -20,31 +20,31 @@ class OrderBookTest extends FunSuite with Matchers {
   }
 
   test("remove best bid from order book") {
-    val newBook = orderBook - OrderKey(Me, EURUSD, QuoteSide.Bid, "0")
+    val newBook = orderBook removeOrder OrderKey(Me, EURUSD, QuoteSide.Bid, "0")
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(newBook.toString)
   }
 
   test("remove mid bid from order book") {
-    val newBook = orderBook - OrderKey(Me, EURUSD, QuoteSide.Bid, "2")
+    val newBook = orderBook removeOrder OrderKey(Me, EURUSD, QuoteSide.Bid, "2")
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(newBook.toString)
   }
 
   test("remove best ask from order book") {
-    val newBook = orderBook - OrderKey(Me, EURUSD, QuoteSide.Ask, "0")
+    val newBook = orderBook removeOrder OrderKey(Me, EURUSD, QuoteSide.Ask, "0")
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.25246,1000000" should equal(newBook.toString)
   }
 
   test("remove far ask from order book") {
-    val newBook = orderBook - OrderKey(Me, EURUSD, QuoteSide.Ask, "1")
+    val newBook = orderBook removeOrder OrderKey(Me, EURUSD, QuoteSide.Ask, "1")
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000" should equal(newBook.toString)
   }
 
   test("add mid bid to order book") {
-    val newBook = orderBook + (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*"), BigDecimal("500000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
+    val newBook = orderBook addOrder (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*"), BigDecimal("500000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25214,500000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(newBook.toString)
-    val newBook2 = newBook + (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*"), BigDecimal("1000000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
+    val newBook2 = newBook addOrder (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*"), BigDecimal("1000000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25214,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(newBook2.toString)
-    val newBook3 = newBook2 + (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*2"), BigDecimal("1000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
+    val newBook3 = newBook2 addOrder (Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*2"), BigDecimal("1000"), BigDecimal("1.25214")), Instant.ofEpochMilli(1273787999996L))
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25214,1000,1.25214,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(newBook3.toString)
   }
 }

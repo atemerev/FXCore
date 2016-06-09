@@ -10,21 +10,24 @@ object Metal {
   }
 }
 
-trait Metal extends AssetClass
+trait Metal extends AssetClass {
+  def code: String
+  override def toString = code
+}
 
 case object Gold extends Metal {
-  val code = "XAU"
+  override val code = "XAU"
 }
 
 case object Silver extends Metal {
-  val code = "XAG"
+  override val code = "XAG"
 }
 
 case object Platinum extends Metal {
-  val code = "XPT"
+  override val code = "XPT"
 }
 
 case object Palladium extends Metal {
-  val code = "XPD"
+  override val code = "XPD"
 }
 

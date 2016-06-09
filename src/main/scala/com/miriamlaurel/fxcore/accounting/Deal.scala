@@ -11,4 +11,6 @@ case class Deal(position: Position, closePrice: BigDecimal, override val timesta
   override def convert(to: AssetClass, market: Market): Option[Entry] = for {
     converted <- market.convert(amount, to, PositionSide.close(position.side), position.absoluteAmount)
   } yield copy(amount = converted)
+
+  override def toString = "Position %s closed at %f".format(position, closePrice)
 }

@@ -5,4 +5,6 @@ case class Currency(code: String) extends AssetClass {
     case c: java.util.Currency ⇒ c.getDefaultFractionDigits
     case null ⇒ 2
   }
+
+  override def toString = code
 }
