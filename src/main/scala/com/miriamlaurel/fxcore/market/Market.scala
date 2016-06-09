@@ -12,7 +12,7 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, time
 
   def get(instrument: Instrument): Option[OrderBook] = books.get(instrument)
 
-  def put(snapshot: OrderBook): Market = copy(books = books + (snapshot.instrument -> snapshot), timestamp = snapshot.timestamp)
+  def put(book: OrderBook): Market = copy(books = books + (book.instrument -> book), timestamp = book.timestamp)
 
   def put(op: OrderOp): Market = {
     val oldBook = this.get(op.instrument) match {
@@ -66,5 +66,5 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, time
 }
 
 object Market {
-  def apply(snapshots: OrderBook*): Market = Market(snapshots.map(s ⇒ s.instrument -> s).toMap)
+  def apply(books: OrderBook*): Market = Market(books.map(s ⇒ s.instrument -> s).toMap)
 }

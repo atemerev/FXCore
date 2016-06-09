@@ -5,9 +5,6 @@ import com.miriamlaurel.fxcore.asset.{Currency, Gold}
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument, MetalInstrument}
 import org.scalatest.{FunSuite, Matchers}
 
-/**
-  * @author Alexander Temerev
-  */
 class InstrumentTest extends FunSuite with Matchers {
 
   test("currencies and metals should compare properly to each other") {

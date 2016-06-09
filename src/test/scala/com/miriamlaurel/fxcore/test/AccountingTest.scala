@@ -10,16 +10,16 @@ import org.scalatest.{FunSuite, Matchers}
 class AccountingTest extends FunSuite with Matchers {
 
   val market = Market(
-    snapshot("EUR/USD", "1.3000", "1.3050"),
-    snapshot("USD/CHF", "1.2000", "1.2050"),
-    snapshot("USD/JPY", "125.00", "125.50")
+    book("EUR/USD", "1.3000", "1.3050"),
+    book("USD/CHF", "1.2000", "1.2050"),
+    book("USD/JPY", "125.00", "125.50")
   )
 
   test("Conversion") {
     val market = Market(
-      snapshot("EUR/USD", "1.4430", "1.4432"),
-      snapshot("USD/CHF", "1.1529", "1.1532"),
-      snapshot("USD/JPY", "113.265", "113.29")
+      book("EUR/USD", "1.4430", "1.4432"),
+      book("USD/CHF", "1.1529", "1.1532"),
+      book("USD/JPY", "113.265", "113.29")
     )
     market.quote(CurrencyPair("CHF/JPY")).get.bid.get.setScale(3, BigDecimal.RoundingMode.HALF_EVEN) should equal(BigDecimal("98.218"))
     market.convert(Money("1 CHF"), Currency("JPY"), QuoteSide.Bid).get.setScale(3) should equal(Money("98.218 JPY"))
@@ -102,6 +102,6 @@ class AccountingTest extends FunSuite with Matchers {
     diff2.actions.head.asInstanceOf[MergePositions].adjustment should equal(Money("-5 USD"))
   }
 
-  def snapshot(instrument: String, bid: String, ask: String) =
+  def book(instrument: String, bid: String, ask: String) =
     OrderBook(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }
