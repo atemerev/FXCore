@@ -139,7 +139,7 @@ case class Position(primary: Monetary,
 
     val pos: Option[Position] = if (f1 == Money.ZERO) None
     else
-      Some(Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset), None, Instant.now(), UUID.randomUUID()))
+      Some(Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset), None, that.timestamp, UUID.randomUUID()))
     (pos, Money(e2, secondary.asset))
   }
 
