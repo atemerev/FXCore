@@ -1,6 +1,5 @@
 package com.miriamlaurel.fxcore.portfolio
 
-import java.time.Instant
 import java.util.UUID
 
 import com.miriamlaurel.fxcore._
@@ -24,7 +23,7 @@ import com.miriamlaurel.fxcore.market.{Market, Quote, QuoteSide}
 case class Position(primary: Monetary,
                     secondary: Monetary,
                     matching: Option[UUID],
-                    override val timestamp: Instant,
+                    override val timestamp: Long,
                     override val id: UUID)
   extends Id with Timestamp {
 
@@ -149,7 +148,7 @@ case class Position(primary: Monetary,
    */
   def diff(oldPosition: Option[Position]): PortfolioDiff = oldPosition match {
     // If no old position found for this instrument -> add new position
-    case None ⇒ new PortfolioDiff(AddPosition(this))
+    case None ⇒ PortfolioDiff(AddPosition(this))
     // If old position is found...
     case Some(oldP) ⇒
       // Merge old and new positions
@@ -158,16 +157,16 @@ case class Position(primary: Monetary,
         // If merged positions collapsed -> remove old position, add new finished deal
         case None ⇒
           val deal = Deal(oldP, this.price, this.timestamp, profitLoss)
-          new PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
+          PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
         // If merging produced new position...
         case Some(remainingPosition) ⇒
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
-            new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
+            PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
           else {
             // Otherwise it is partial close -> modify existing position, create partial close deal
             val deal = partialCloseDeal(oldP)
-            new PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition), CreateDeal(deal))
+            PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition), CreateDeal(deal))
           }
       }
   }
@@ -179,7 +178,7 @@ case class Position(primary: Monetary,
     val closingAmount = (oldPosition.absoluteAmount min this.absoluteAmount) * oldPosition.primary.amount.signum
     val closingPart = Position(oldPosition.instrument, oldPosition.price,
       closingAmount, Some(oldPosition.id), oldPosition.timestamp)
-    new Deal(closingPart, this.price, this.timestamp, (oldPosition merge this)._2)
+    Deal(closingPart, this.price, this.timestamp, (oldPosition merge this)._2)
   }
 
   override def toString = "POSITION " + instrument + " " + primary + " @ " + price
@@ -190,7 +189,7 @@ object Position {
             price: BigDecimal,
             amount: BigDecimal,
             matching: Option[UUID] = None,
-            timestamp: Instant = Instant.now(),
+            timestamp: Long = System.currentTimeMillis(),
             id: UUID = UUID.randomUUID()): Position = Position(
     primary = Monetary(amount, instrument.base),
     secondary = Monetary(-amount * price, instrument.counter),

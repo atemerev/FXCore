@@ -1,15 +1,11 @@
 package com.miriamlaurel.fxcore.market
 
-import java.time.Instant
-
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
 
-case class Quote(
-                  instrument: Instrument,
+case class Quote(instrument: Instrument,
                   bid: Option[BigDecimal],
-                  ask: Option[BigDecimal],
-                  override val timestamp: Instant) extends Timestamp {
+                  ask: Option[BigDecimal]) {
 
   val isFull: Boolean = bid.isDefined && ask.isDefined
 
@@ -29,19 +25,19 @@ case class Quote(
   lazy val reverse: Quote = {
     val rBid = for (a <- ask) yield BigDecimal(1) / a
     val rAsk = for (b <- bid) yield BigDecimal(1) / b
-    Quote(instrument.asInstanceOf[CurrencyPair].reverse, rBid, rAsk, timestamp)
+    Quote(instrument.asInstanceOf[CurrencyPair].reverse, rBid, rAsk)
   }
 
   def normalize(fractionDigits: Int): Quote = {
     val nBid = for (b <- bid) yield rescale(b, pipScale(instrument.asInstanceOf[CurrencyPair]) + fractionDigits)
     val nAsk = for (a <- ask) yield rescale(a, pipScale(instrument.asInstanceOf[CurrencyPair]) + fractionDigits)
-    Quote(instrument, nBid, nAsk, timestamp)
+    Quote(instrument, nBid, nAsk)
   }
 
   override def toString: String = {
     val bidS = (for (b <- bid) yield b.toString()).getOrElse("?")
     val askS = (for (a <- ask) yield a.toString()).getOrElse("?")
-    "%d %s %s/%s".format(timestamp.toEpochMilli, instrument, bidS, askS)
+    "%s %s/%s".format(instrument, bidS, askS)
   }
 }
 

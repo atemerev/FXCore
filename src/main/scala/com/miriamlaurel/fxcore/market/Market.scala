@@ -1,18 +1,16 @@
 package com.miriamlaurel.fxcore.market
 
-import java.time.Instant
-
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 import com.miriamlaurel.fxcore.instrument.Instrument
 
-case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, timestamp: Instant = Instant.EPOCH) {
+case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
 
   def apply(instrument: Instrument): OrderBook = books(instrument)
 
   def get(instrument: Instrument): Option[OrderBook] = books.get(instrument)
 
-  def put(book: OrderBook): Market = copy(books = books + (book.instrument -> book), timestamp = book.timestamp)
+  def put(book: OrderBook): Market = copy(books = books + (book.instrument -> book))
 
   def put(op: OrderOp): Market = {
     val oldBook = this.get(op.instrument) match {
@@ -26,7 +24,7 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, time
 
   def quote(instrument: Instrument, amount: BigDecimal = 0): Option[Quote] = {
     if (instrument.base == instrument.counter)
-      Some(Quote(instrument, Some(1), Some(1), timestamp))
+      Some(Quote(instrument, Some(1), Some(1)))
     else if (books.contains(instrument)) Some(apply(instrument).quote(amount))
     else if (books.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse)
     else for {
@@ -40,8 +38,7 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD, time
       bAsk <- y.ask
       bid <- Some(aBid * bBid)
       ask <- Some(aAsk * bAsk)
-      timestamp = Instant.ofEpochMilli(a.timestamp.toEpochMilli max b.timestamp.toEpochMilli)
-    } yield Quote(instrument, Some(bid), Some(ask), timestamp)
+    } yield Quote(instrument, Some(bid), Some(ask))
   }
 
   def convert(from: Money,

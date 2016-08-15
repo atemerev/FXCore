@@ -103,5 +103,5 @@ class AccountingTest extends FunSuite with Matchers {
   }
 
   def book(instrument: String, bid: String, ask: String) =
-    OrderBook(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
+    OrderBookTest.fromCsv(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }
