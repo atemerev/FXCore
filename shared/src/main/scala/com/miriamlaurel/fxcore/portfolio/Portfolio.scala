@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore.portfolio
 
-import com.miriamlaurel.fxcore.Money
+import com.miriamlaurel.fxcore.{Money, SafeDouble}
 import com.miriamlaurel.fxcore.asset.AssetClass
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.Market
@@ -36,12 +36,12 @@ trait Portfolio {
   Total amount of all positions in portfolio (expressed in their primary asset). Not that useful beyond
   forex portfolios, though...
    */
-  def amount(instrument: Instrument): BigDecimal = this.positions(instrument).map(_.absoluteAmount).foldLeft(BigDecimal(0))(_ + _)
+  def amount(instrument: Instrument): SafeDouble = this.positions(instrument).map(_.absoluteAmount).foldLeft(SafeDouble(0))(_ + _)
 
   /*!
   Non-absolute amount value, collapsing all positions.
    */
-  def total(instrument: Instrument): BigDecimal = this.positions(instrument).map(_.primary.amount).foldLeft(BigDecimal(0))(_ + _)
+  def total(instrument: Instrument): SafeDouble = this.positions(instrument).map(_.primary.amount).foldLeft(SafeDouble(0))(_ + _)
 
   /*!
   Total profit/loss for all positions in portfolio. Since it can be calculated in any asset (currency), a
@@ -51,7 +51,7 @@ trait Portfolio {
     val plValues = this.positions.map(_.profitLossIn(asset, market))
     if (plValues.exists(_.isEmpty)) None
     else
-      Some(Money((for (i <- plValues; v <- i) yield v.amount).foldLeft(BigDecimal(0))(_ + _), asset))
+      Some(Money((for (i <- plValues; v <- i) yield v.amount).foldLeft(SafeDouble(0))(_ + _), asset))
   }
 
   /*!

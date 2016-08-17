@@ -2,10 +2,11 @@ package com.miriamlaurel.fxcore.portfolio
 
 import java.util.UUID
 
+import com.miriamlaurel.fxcore.SafeDouble
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.accounting.Deal
 import com.miriamlaurel.fxcore.asset.AssetClass
-import com.miriamlaurel.fxcore.instrument.{CurrencyPair, Instrument}
+import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.{Market, Quote, QuoteSide}
 
 /** Position
@@ -31,7 +32,7 @@ case class Position(primary: Monetary,
     * If position's primary amount is positive (a long position), it's secondary amount should be negative,
     * and vice versa.
     */
-  require(primary.amount.signum != secondary.amount.signum)
+  require(primary.amount.toDouble.signum != secondary.amount.toDouble.signum)
 
   /*!
   An instrument can be constructed from position's primary and secondary asset, like "EUR/USD" (a currency pair).
@@ -41,7 +42,7 @@ case class Position(primary: Monetary,
   /*!
   We can easily calculate a price for 1 unit of primary asset -- it is usually referred as position's price.
    */
-  lazy val price: BigDecimal = (secondary.amount / primary.amount).abs
+  lazy val price: SafeDouble = math.abs(secondary.amount.toDouble / primary.amount.toDouble)
 
   /*!
   Position can be either long (primary amount is positive) or short (negative). Short positions may be handled
@@ -53,18 +54,18 @@ case class Position(primary: Monetary,
   Position amount is the absolute value of primary asset amount, i.e. it is always positive. If amount sign
   matters (it usually does), one should use .primary.amount
    */
-  lazy val absoluteAmount: BigDecimal = primary.amount.abs
+  lazy val absoluteAmount: SafeDouble = math.abs(primary.amount.toDouble)
 
   /*!
   Create a reversed position with new price and matching UUID. This can be used efficiently to close a position.
    */
-  def close(newPrice: BigDecimal): Position = Position(instrument, newPrice, -primary.amount, Some(id))
+  def close(newPrice: SafeDouble): Position = Position(instrument, newPrice, -primary.amount, Some(id))
 
   /*!
   Position's profit or loss for any price level can be easily calculated, provided it's expressed in position's
   secondary asset units.
    */
-  def profitLoss(newPrice: BigDecimal): Money = {
+  def profitLoss(newPrice: SafeDouble): Money = {
     Money((newPrice - price) * primary.amount, secondary.asset)
   }
 
@@ -90,22 +91,6 @@ case class Position(primary: Monetary,
   }
 
   /*!
-  For currency positions, it may be convenient to express profit/loss value in pips.
-   */
-  def profitLossPips(price: BigDecimal): BigDecimal = instrument match {
-    case cp: CurrencyPair ⇒ asPips(cp, (price - this.price) * primary.amount.signum)
-    case _ ⇒ throw new UnsupportedOperationException("Pips operations are defined only on currency positions")
-  }
-
-  def profitLossPips(quote: Quote): Option[BigDecimal] = {
-    val s = PositionSide.close(side)
-    for (p <- quote(s)) yield profitLossPips(p)
-  }
-
-  def profitLossPips(market: Market): Option[BigDecimal] = for (q <- market.quote(instrument, absoluteAmount);
-                                                                pl <- profitLossPips(q)) yield pl
-
-  /*!
   Two positions can be merged, in such a way that:
   * Two positions with the same side are merged into a larger position;
   * Two positions with equal amounts and opposite sides collapse; some profit or loss appears from this operation;
@@ -126,17 +111,17 @@ case class Position(primary: Monetary,
     val a2 = this.secondary.amount
     val b1 = that.primary.amount
     val b2 = that.secondary.amount
-    val c1: BigDecimal = (if (a1.signum * b1.signum == -1) a1.abs min b1.abs else Money.ZERO) * a1.signum
-    val c2: BigDecimal = if (a1 == Money.ZERO) a2 else c1 * (a2 / a1)
-    val d1: BigDecimal = -c1
-    val d2: BigDecimal = if (b1 == Money.ZERO) b2 else d1 * (b2 / b1)
+    val c1: SafeDouble = (if (a1.toDouble.signum * b1.toDouble.signum == -1) math.abs(a1.toDouble) min math.abs(b1.toDouble) else 0) * a1.toDouble.signum
+    val c2: SafeDouble = if (a1.toDouble == 0) a2 else c1 * (a2 / a1)
+    val d1: SafeDouble = -c1
+    val d2: SafeDouble = if (b1.toDouble == 0) b2 else d1 * (b2 / b1)
     // e1 is always zero
-    val e2: BigDecimal = c2 + d2
-    val sigma = if (a1.abs > b1.abs) -1 else 1
-    val f1: BigDecimal = a1 + b1
-    val f2: BigDecimal = if (a1.signum * b1.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
+    val e2: SafeDouble = c2 + d2
+    val sigma = if (math.abs(a1.toDouble) > math.abs(b1.toDouble)) -1 else 1
+    val f1: SafeDouble = a1 + b1
+    val f2: SafeDouble = if (a1.toDouble.signum * b1.toDouble.signum == 1) a2 + b2 else if (sigma < 0) a2 - c2 else b2 - d2
 
-    val pos: Option[Position] = if (f1 == Money.ZERO) None
+    val pos: Option[Position] = if (f1.toDouble == 0) None
     else
       Some(Position(Monetary(f1, primary.asset), Monetary(f2, secondary.asset), None, that.timestamp, UUID.randomUUID()))
     (pos, Money(e2, secondary.asset))
@@ -175,7 +160,7 @@ case class Position(primary: Monetary,
     require(oldPosition.instrument == this.instrument)
     require(oldPosition.side != this.side)
     require(oldPosition.absoluteAmount != this.absoluteAmount)
-    val closingAmount = (oldPosition.absoluteAmount min this.absoluteAmount) * oldPosition.primary.amount.signum
+    val closingAmount = math.min(oldPosition.absoluteAmount.toDouble,this.absoluteAmount.toDouble) * oldPosition.primary.amount.toDouble.signum
     val closingPart = Position(oldPosition.instrument, oldPosition.price,
       closingAmount, Some(oldPosition.id), oldPosition.timestamp)
     Deal(closingPart, this.price, this.timestamp, (oldPosition merge this)._2)
@@ -186,8 +171,8 @@ case class Position(primary: Monetary,
 
 object Position {
   def apply(instrument: Instrument,
-            price: BigDecimal,
-            amount: BigDecimal,
+            price: SafeDouble,
+            amount: SafeDouble,
             matching: Option[UUID] = None,
             timestamp: Long = System.currentTimeMillis(),
             id: UUID = UUID.randomUUID()): Position = Position(

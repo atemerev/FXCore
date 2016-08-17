@@ -1,5 +1,6 @@
 package com.miriamlaurel.fxcore.market
 
+import com.miriamlaurel.fxcore.SafeDouble
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.party.Party
 
@@ -7,12 +8,12 @@ import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
 
 class OrderBook private(val instrument: Instrument,
-                        val bids: SortedMap[BigDecimal, Map[OrderKey, Order]] = SortedMap()(Ordering.BigDecimal.reverse),
-                        val asks: SortedMap[BigDecimal, Map[OrderKey, Order]] = SortedMap()(Ordering.BigDecimal),
+                        val bids: SortedMap[SafeDouble, Map[OrderKey, Order]] = SortedMap()(OrderBook.DESCENDING),
+                        val asks: SortedMap[SafeDouble, Map[OrderKey, Order]] = SortedMap()(OrderBook.ASCENDING),
                         val byKey: Map[OrderKey, Order] = Map.empty) {
 
-  lazy val bestBid: Option[BigDecimal] = for (h <- bids.headOption) yield h._1
-  lazy val bestAsk: Option[BigDecimal] = for (h <- asks.headOption) yield h._1
+  lazy val bestBid: Option[SafeDouble] = for (h <- bids.headOption) yield h._1
+  lazy val bestAsk: Option[SafeDouble] = for (h <- asks.headOption) yield h._1
   lazy val best = Quote(instrument, bestBid, bestAsk)
 
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
@@ -109,7 +110,7 @@ class OrderBook private(val instrument: Instrument,
   }
 
   @tailrec
-  private def slice(side: QuoteSide.Value, amount: BigDecimal, taken: BigDecimal, acc: List[Order], excludeId: Option[String]): List[Order] = {
+  private def slice(side: QuoteSide.Value, amount: SafeDouble, taken: SafeDouble, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
     if (line.isEmpty) acc else {
       val first = line.head._2.head._2
@@ -121,13 +122,13 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
-  private def slice(side: QuoteSide.Value, amount: BigDecimal, excludeId: Option[String]): List[Order] = slice(side, amount, BigDecimal(0), List.empty, excludeId)
+  private def slice(side: QuoteSide.Value, amount: SafeDouble, excludeId: Option[String]): List[Order] = slice(side, amount, SafeDouble(0), List.empty, excludeId)
 
-  def slice(side: QuoteSide.Value, amount: BigDecimal): List[Order] = slice(side, amount, BigDecimal(0), List.empty, None)
+  def slice(side: QuoteSide.Value, amount: SafeDouble): List[Order] = slice(side, amount, SafeDouble(0), List.empty, None)
 
-  def slice(side: QuoteSide.Value, amount: BigDecimal, excludeId: String): List[Order] = slice(side, amount, BigDecimal(0), List.empty, Some(excludeId))
+  def slice(side: QuoteSide.Value, amount: SafeDouble, excludeId: String): List[Order] = slice(side, amount, SafeDouble(0), List.empty, Some(excludeId))
 
-  def trim(amount: BigDecimal): OrderBook = OrderBook(slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount))
+  def trim(amount: SafeDouble): OrderBook = OrderBook(slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount))
 
   def trimLength(maxSize: Int): OrderBook = {
     val bids = this.bids.take(maxSize).flatMap(_._2.values)
@@ -135,9 +136,9 @@ class OrderBook private(val instrument: Instrument,
     OrderBook(bids ++ asks)
   }
 
-  private def quote(amount: BigDecimal, excludeId: Option[String]): Quote = {
+  private def quote(amount: SafeDouble, excludeId: Option[String]): Quote = {
     require(amount >= 0)
-    if (amount == BigDecimal(0)) best
+    if (amount == SafeDouble(0)) best
     else {
       val sliceBid = slice(QuoteSide.Bid, amount, excludeId)
       val sliceAsk = slice(QuoteSide.Ask, amount, excludeId)
@@ -147,12 +148,12 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
-  def quote(amount: BigDecimal): Quote = quote(amount, None)
-  def quote(amount: BigDecimal, excludeId: String): Quote = quote(amount, Some(excludeId))
+  def quote(amount: SafeDouble): Quote = quote(amount, None)
+  def quote(amount: SafeDouble, excludeId: String): Quote = quote(amount, Some(excludeId))
 
-  private def quoteSpread(amount: BigDecimal, excludeId: Option[String]): Quote = {
+  private def quoteSpread(amount: SafeDouble, excludeId: Option[String]): Quote = {
     require(amount >= 0)
-    if (amount == BigDecimal(0)) best
+    if (amount == SafeDouble(0)) best
     else {
       val sliceBid = slice(QuoteSide.Bid, amount, excludeId)
       val sliceAsk = slice(QuoteSide.Ask, amount, excludeId)
@@ -162,16 +163,19 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
-  def quoteSpread(amount: BigDecimal): Quote = quoteSpread(amount, None)
-  def quoteSpread(amount: BigDecimal, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
+  def quoteSpread(amount: SafeDouble): Quote = quoteSpread(amount, None)
+  def quoteSpread(amount: SafeDouble, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
 
   override def toString = bids.toString() + " | " + asks.toString()
 
-  private def weightedAvg(orders: List[Order]): BigDecimal =
-    orders.map(order ⇒ order.price * order.amount).sum / orders.map(_.amount).sum
+  private def weightedAvg(orders: List[Order]): SafeDouble =
+    orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
 }
 
 object OrderBook {
+
+  private val ASCENDING = Ordering.by((x: SafeDouble) => x.toDouble)
+  private val DESCENDING = ASCENDING.reverse
 
   def empty(instrument: Instrument): OrderBook = new OrderBook(instrument)
 

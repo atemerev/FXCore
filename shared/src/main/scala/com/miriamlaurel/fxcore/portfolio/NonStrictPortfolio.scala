@@ -44,7 +44,7 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
    */
   def mergePositions(ids: Set[UUID]): (NonStrictPortfolio, PortfolioDiff) = {
     val toMerge = positions.filter(position ⇒ ids.contains(position.id))
-    if (toMerge.isEmpty) (this, new PortfolioDiff())
+    if (toMerge.isEmpty) (this, PortfolioDiff())
     else {
       require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
       val instrument = toMerge.head.instrument
@@ -66,7 +66,7 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
       }
       val newDetails = details + (instrument -> newMap)
       val newPortfolio = new NonStrictPortfolio(newDetails)
-      val diff = new PortfolioDiff(MergePositions(instrument, toMerge.toSet, merged, adjustment))
+      val diff = PortfolioDiff(MergePositions(instrument, toMerge.toSet, merged, adjustment))
       (newPortfolio, diff)
     }
   }

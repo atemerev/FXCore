@@ -4,20 +4,15 @@ import com.miriamlaurel.fxcore.asset.{AssetClass, Currency}
 
 sealed trait Money extends Ordered[Money] {
 
-  val ZERO = BigDecimal(0)
-  val ONE = BigDecimal(1)
-
-  def amount: BigDecimal
+  def amount: SafeDouble
 
   def +(that: Money): Money
 
   def -(that: Money): Money
 
-  def *(that: BigDecimal): Money
+  def *(that: SafeDouble): Money
 
-  def /(that: BigDecimal): Money
-
-  def setScale(scale: Int): Money
+  def /(that: SafeDouble): Money
 
   def unary_- : Money
 
@@ -25,11 +20,11 @@ sealed trait Money extends Ordered[Money] {
 }
 
 case object Zilch extends Money {
-  val amount: BigDecimal = ZERO
+  val amount: SafeDouble = 0
 
-  def /(that: BigDecimal) = Zilch
+  def /(that: SafeDouble) = Zilch
 
-  def *(that: BigDecimal) = Zilch
+  def *(that: SafeDouble) = Zilch
 
   def -(that: Money) = -that
 
@@ -49,14 +44,14 @@ case object Zilch extends Money {
   override def toString = "0"
 }
 
-case class Monetary(amount: BigDecimal, asset: AssetClass) extends Money {
+case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
 
   def +(that: Money) = that match {
     case Zilch ⇒ this
     case m: Monetary ⇒
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
-      if (sum == ZERO) Zilch else Monetary(sum, asset)
+      if (sum.toDouble == 0) Zilch else Monetary(sum, asset)
   }
 
   def -(that: Money) = that match {
@@ -64,18 +59,16 @@ case class Monetary(amount: BigDecimal, asset: AssetClass) extends Money {
     case m: Monetary ⇒
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
-      if (diff == null) Zilch else Monetary(diff, asset)
+      if (diff.toDouble == 0) Zilch else Monetary(diff, asset)
   }
 
-  def *(that: BigDecimal) = if (that == ZERO) Zilch else Monetary(amount * that, asset)
+  def *(that: SafeDouble) = if (that.toDouble == 0) Zilch else Monetary(amount * that, asset)
 
-  def /(that: BigDecimal) = Monetary(this.amount / that, asset)
-
-  def setScale(scale: Int) = Money(amount.setScale(scale, BigDecimal.RoundingMode.HALF_EVEN), asset)
+  def /(that: SafeDouble) = Monetary(this.amount / that, asset)
 
   def unary_- = Monetary(-amount, asset)
 
-  def abs = Monetary(amount.abs, asset)
+  def abs = Monetary(math.abs(amount.toDouble), asset)
 
   def compare(that: Money) = that match {
     case Zilch ⇒ if (amount > 0) 1 else -1
@@ -89,13 +82,10 @@ case class Monetary(amount: BigDecimal, asset: AssetClass) extends Money {
 
 object Money {
 
-  val ZERO = BigDecimal(0)
-  val ONE = BigDecimal(1)
-
-  def apply(amount: BigDecimal, asset: AssetClass): Money = if (amount == ZERO) Zilch else Monetary(amount, asset)
+  def apply(amount: SafeDouble, asset: AssetClass): Money = if (amount.toDouble == 0) Zilch else Monetary(amount, asset)
 
   def apply(s: String): Money = {
     val tokens = s.split(" ")
-    apply(BigDecimal(tokens(0)), Currency(tokens(1)))
+    apply(tokens(0).toDouble, Currency(tokens(1)))
   }
 }

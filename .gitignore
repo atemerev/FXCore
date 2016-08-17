@@ -6,3 +6,5 @@ target/
 lib/
 out/
 project/
+/jvm/target/
+/js/target/

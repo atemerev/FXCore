@@ -21,11 +21,10 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
     this.put(newBook)
   }
 
-
-  def quote(instrument: Instrument, amount: BigDecimal = 0): Option[Quote] = {
+  def quote(instrument: Instrument, amount: SafeDouble = 0): Option[Quote] = {
     if (instrument.base == instrument.counter)
       Some(Quote(instrument, Some(1), Some(1)))
-    else if (books.contains(instrument)) Some(apply(instrument).quote(amount))
+    else if (books.contains(instrument)) Some(apply(instrument).best)
     else if (books.contains(instrument.reverse)) Some(apply(instrument.reverse).quote(amount).reverse)
     else for {
       a <- quoteToPivot(instrument.base)
@@ -44,7 +43,7 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
   def convert(from: Money,
               to: AssetClass,
               side: QuoteSide.Value,
-              amount: BigDecimal = 0): Option[Money] = from match {
+              amount: SafeDouble = 0): Option[Money] = from match {
     case Zilch ⇒ Some(Zilch)
     case m: Monetary ⇒ for (q <- quote(Instrument(m.asset, to), amount);
                             p <- q.apply(side)) yield Money(p * m.amount, to)
