@@ -174,7 +174,7 @@ class OrderBook private(val instrument: Instrument,
 
 object OrderBook {
 
-  private val ASCENDING = Ordering.by((x: SafeDouble) => x.toDouble)
+  private val ASCENDING = Ordering.by((x: SafeDouble) => x)
   private val DESCENDING = ASCENDING.reverse
 
   def empty(instrument: Instrument): OrderBook = new OrderBook(instrument)

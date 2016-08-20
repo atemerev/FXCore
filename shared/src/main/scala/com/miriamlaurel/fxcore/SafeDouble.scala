@@ -20,6 +20,8 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
 
   def unary_-(): SafeDouble = SafeDouble.apply(-this.dbl)
 
+  def signum: Int = dbl.signum
+
   def toInt: Int = dbl.toInt
 
   def toLong: Long = dbl.toLong
@@ -32,7 +34,9 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
   override def compare(that: SafeDouble): Int = Ordering.Double.compare(this.dbl, that.dbl)
 
   // And that!
-  def ==(that: SafeDouble): Boolean = this.toDouble == that.toDouble
+  def ==(that: SafeDouble): Boolean = this.dbl == that.dbl
+  def ==(that: Int): Boolean = this.dbl == that.toDouble
+  def ==(that: Long): Boolean = this.dbl == that.toDouble
 
   override def toString = if (dbl == dbl.toInt) dbl.toInt.toString else dbl.toString
 }
@@ -43,8 +47,11 @@ object SafeDouble {
   val DEFAULT_SCALE_FACTOR: Double = 1e8
 
   implicit def fromDouble(dbl: Double): SafeDouble = SafeDouble.apply(dbl)
+  implicit def toDouble(safe: SafeDouble): Double = safe.toDouble
   implicit def fromInt(int: Int): SafeDouble = SafeDouble.apply(int)
   implicit def fromLong(long: Long): SafeDouble = SafeDouble.apply(long)
+
+  implicit val numeric = SafeDoubleNumeric
 
   def apply(value: Double)(implicit factor: Double = DEFAULT_SCALE_FACTOR): SafeDouble = {
     if (value > Long.MaxValue / factor || value < -Long.MaxValue / factor) new SafeDouble(value)

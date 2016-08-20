@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore
 
-class SafeDoubleNumeric extends Fractional[SafeDouble] {
+object SafeDoubleNumeric extends Fractional[SafeDouble] {
   override def plus(x: SafeDouble, y: SafeDouble): SafeDouble = x + y
 
   override def minus(x: SafeDouble, y: SafeDouble): SafeDouble = x - y

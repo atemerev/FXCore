@@ -51,7 +51,7 @@ case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
     case m: Monetary ⇒
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
-      if (sum.toDouble == 0) Zilch else Monetary(sum, asset)
+      if (sum == 0) Zilch else Monetary(sum, asset)
   }
 
   def -(that: Money) = that match {
@@ -59,16 +59,16 @@ case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
     case m: Monetary ⇒
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
-      if (diff.toDouble == 0) Zilch else Monetary(diff, asset)
+      if (diff == 0) Zilch else Monetary(diff, asset)
   }
 
-  def *(that: SafeDouble) = if (that.toDouble == 0) Zilch else Monetary(amount * that, asset)
+  def *(that: SafeDouble) = if (that == 0) Zilch else Monetary(amount * that, asset)
 
   def /(that: SafeDouble) = Monetary(this.amount / that, asset)
 
   def unary_- = Monetary(-amount, asset)
 
-  def abs = Monetary(math.abs(amount.toDouble), asset)
+  def abs = Monetary(math.abs(amount), asset)
 
   def compare(that: Money) = that match {
     case Zilch ⇒ if (amount > 0) 1 else -1
@@ -82,7 +82,7 @@ case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
 
 object Money {
 
-  def apply(amount: SafeDouble, asset: AssetClass): Money = if (amount.toDouble == 0) Zilch else Monetary(amount, asset)
+  def apply(amount: SafeDouble, asset: AssetClass): Money = if (amount == 0) Zilch else Monetary(amount, asset)
 
   def apply(s: String): Money = {
     val tokens = s.split(" ")

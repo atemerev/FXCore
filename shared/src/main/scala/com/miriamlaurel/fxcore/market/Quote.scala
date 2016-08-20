@@ -18,8 +18,8 @@ case class Quote(instrument: Instrument,
   def value(side: QuoteSide.Value): Option[SafeDouble] = if (side == QuoteSide.Bid) bid else ask
 
   lazy val reverse: Quote = {
-    val rBid = for (a <- ask) yield 1 / a
-    val rAsk = for (b <- bid) yield 1 / b
+    val rBid: Option[SafeDouble] = for (a <- ask) yield 1 / a
+    val rAsk: Option[SafeDouble] = for (b <- bid) yield 1 / b
     Quote(instrument.asInstanceOf[CurrencyPair].reverse, rBid, rAsk)
   }
 

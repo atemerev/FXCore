@@ -61,8 +61,8 @@ object OrderBookTest {
     val askS: List[(String, String)] = pair(tokens.slice(asksIndex + 1, tokens.length).toList)
     val bidSize = bidS.size
     val orders = bidS.zipWithIndex.map(
-      n ⇒ Order(Me, instrument, QuoteSide.Bid, (bidSize - n._2 - 1).toString, SafeDouble(n._1._2.toDouble), SafeDouble(n._1._1.toDouble))) ++
-      askS.zipWithIndex.map(n ⇒ Order(Me, instrument, QuoteSide.Ask, n._2.toString, SafeDouble(n._1._2.toDouble), SafeDouble(n._1._1.toDouble)))
+      n ⇒ Order(Me, instrument, QuoteSide.Bid, (bidSize - n._2 - 1).toString, n._1._2.toDouble, n._1._1.toDouble)) ++
+      askS.zipWithIndex.map(n ⇒ Order(Me, instrument, QuoteSide.Ask, n._2.toString, n._1._2.toDouble, n._1._1.toDouble))
     OrderBook(orders)
   }
 
