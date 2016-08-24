@@ -68,8 +68,8 @@ object OrderBookTest {
 
   def toCsv(orderBook: OrderBook, timestamp: Long) = {
     timestamp + "," + orderBook.instrument.toString + ",BIDS," +
-      orderBook.bids.values.flatten.toSeq.reverse.map(o ⇒ o._2.price.toString + "," + o._2.amount.toString).mkString(",") +
+      orderBook.bids.values.flatMap(_.orders).toSeq.reverse.map(o ⇒ o.price.toString + "," + o.amount.toString).mkString(",") +
       ",ASKS," +
-      orderBook.asks.values.flatten.map(o ⇒ o._2.price.toString + "," + o._2.amount.toString).mkString(",")
+      orderBook.asks.values.flatMap(_.orders).map(o ⇒ o.price.toString + "," + o.amount.toString).mkString(",")
   }
 }

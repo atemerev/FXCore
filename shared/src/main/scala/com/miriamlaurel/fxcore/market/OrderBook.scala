@@ -2,14 +2,15 @@ package com.miriamlaurel.fxcore.market
 
 import com.miriamlaurel.fxcore.SafeDouble
 import com.miriamlaurel.fxcore.instrument.Instrument
+import com.miriamlaurel.fxcore.market.OrderBook.Aggregate
 import com.miriamlaurel.fxcore.party.Party
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
 
 class OrderBook private(val instrument: Instrument,
-                        val bids: SortedMap[SafeDouble, Map[OrderKey, Order]] = SortedMap()(OrderBook.DESCENDING),
-                        val asks: SortedMap[SafeDouble, Map[OrderKey, Order]] = SortedMap()(OrderBook.ASCENDING),
+                        val bids: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.DESCENDING),
+                        val asks: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.ASCENDING),
                         val byKey: Map[OrderKey, Order] = Map.empty) {
 
   lazy val bestBid: Option[SafeDouble] = for (h <- bids.headOption) yield h._1
@@ -34,7 +35,7 @@ class OrderBook private(val instrument: Instrument,
         val oldPrice = existingOrder.price
         val newPrice = order.price
         val removedOldPrice = line(oldPrice) - existingOrder.key
-        val addedNewPrice = if (line.contains(newPrice)) line(newPrice) + (order.key -> order) else Map(order.key -> order)
+        val addedNewPrice = if (line.contains(newPrice)) line(newPrice) + order else Aggregate(order.price, order.key.side, order)
         val tmpLine = if (removedOldPrice.isEmpty) line - oldPrice else line + (oldPrice -> removedOldPrice)
         val newLine = tmpLine + (newPrice -> addedNewPrice)
         val newByKey = byKey + (order.key -> order)
@@ -43,8 +44,8 @@ class OrderBook private(val instrument: Instrument,
       // no order with same key; adding new order to the book
       case None ⇒
         val newLine = line.get(order.price) match {
-          case Some(orders) ⇒ line + (order.price -> (orders + (order.key -> order)))
-          case None ⇒ line + (order.price -> Map(order.key -> order))
+          case Some(orders) ⇒ line + (order.price -> (orders + order))
+          case None ⇒ line + (order.price -> Aggregate(order.price, order.key.side, order))
         }
         val newByKey = byKey + (order.key -> order)
         if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey)
@@ -100,10 +101,10 @@ class OrderBook private(val instrument: Instrument,
       }
     }
 
-    val currentBids = this.bids.values.flatMap(_.values)
-    val prevBids = prev.bids.values.flatMap(_.values)
-    val currentAsks = this.asks.values.flatMap(_.values)
-    val prevAsks = prev.asks.values.flatMap(_.values)
+    val currentBids = this.bids.values.flatMap(_.orders)
+    val prevBids = prev.bids.values.flatMap(_.orders)
+    val currentAsks = this.asks.values.flatMap(_.orders)
+    val prevAsks = prev.asks.values.flatMap(_.orders)
     val bidOps = compare(QuoteSide.Bid, currentBids, prevBids, List.empty)
     val askOps = compare(QuoteSide.Ask, currentAsks, prevAsks, List.empty)
     bidOps ::: askOps
@@ -113,7 +114,7 @@ class OrderBook private(val instrument: Instrument,
   private def slice(side: QuoteSide.Value, amount: SafeDouble, taken: SafeDouble, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
     if (line.isEmpty) acc else {
-      val first = line.head._2.head._2
+      val first = line.head._2.orders.head
       val newAcc = excludeId match {
         case Some(id) ⇒ if (id == first.key.id) acc else first :: acc
         case None ⇒ first :: acc
@@ -131,8 +132,8 @@ class OrderBook private(val instrument: Instrument,
   def trim(amount: SafeDouble): OrderBook = OrderBook(slice(QuoteSide.Bid, amount) ::: slice(QuoteSide.Ask, amount))
 
   def trimLength(maxSize: Int): OrderBook = {
-    val bids = this.bids.take(maxSize).flatMap(_._2.values)
-    val asks = this.asks.take(maxSize).flatMap(_._2.values)
+    val bids = this.bids.take(maxSize).flatMap(_._2.orders)
+    val asks = this.asks.take(maxSize).flatMap(_._2.orders)
     OrderBook(bids ++ asks)
   }
 
@@ -170,9 +171,58 @@ class OrderBook private(val instrument: Instrument,
 
   private def weightedAvg(orders: List[Order]): SafeDouble =
     orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
+
 }
 
 object OrderBook {
+
+  class Aggregate private(val price: SafeDouble, val side: QuoteSide.Value, entries: Map[OrderKey, Order], val totalAmount: SafeDouble) {
+
+    lazy val orders: Iterable[Order] = entries.values
+
+    require(isEmpty || totalAmount > 0)
+
+    def +(newEntry: Order): Aggregate = {
+
+      require(this.price == newEntry.price)
+      require(this.side == newEntry.key.side)
+
+      val newTotal = entries.get(newEntry.key) match {
+        case Some(existing) ⇒ totalAmount - existing.amount + newEntry.amount
+        case None ⇒ totalAmount + newEntry.amount
+      }
+      new Aggregate(price, side, entries + (newEntry.key -> newEntry), newTotal)
+    }
+
+    def -(orderKey: OrderKey): Aggregate = {
+      val newEntries = entries - orderKey
+      if (newEntries.isEmpty) new Aggregate(price, side, Map.empty, 0)
+      else {
+        val newAmount = entries.get(orderKey) match {
+          case Some(existing) ⇒ totalAmount - existing.amount
+          case None ⇒ totalAmount
+        }
+        new Aggregate(price, side, newEntries, newAmount)
+      }
+    }
+
+    def isEmpty: Boolean = entries.isEmpty
+
+    def size: Int = entries.size
+
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: Aggregate ⇒ this.orders equals that.orders
+      case _ ⇒ false
+    }
+    override def hashCode(): Int = this.entries.values.hashCode()
+  }
+
+  object Aggregate {
+    def apply(price: SafeDouble, side: QuoteSide.Value, orders: Order*): Aggregate = {
+      val empty = new Aggregate(price, side, Map.empty, 0)
+      orders.foldLeft(empty)((agg: Aggregate, ord: Order) ⇒ agg + ord)
+    }
+  }
 
   private val ASCENDING = Ordering.by((x: SafeDouble) => x.toDouble)
   private val DESCENDING = ASCENDING.reverse
