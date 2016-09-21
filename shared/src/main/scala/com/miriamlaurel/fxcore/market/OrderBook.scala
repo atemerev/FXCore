@@ -1,6 +1,6 @@
 package com.miriamlaurel.fxcore.market
 
-import com.miriamlaurel.fxcore.SafeDouble
+import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.OrderBook.Aggregate
 import com.miriamlaurel.fxcore.party.Party
@@ -11,7 +11,8 @@ import scala.collection.immutable.SortedMap
 class OrderBook private(val instrument: Instrument,
                         val bids: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.DESCENDING),
                         val asks: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.ASCENDING),
-                        val byKey: Map[OrderKey, Order] = Map.empty) {
+                        val byKey: Map[OrderKey, Order] = Map.empty,
+                        override val timestamp: Long) extends Timestamp {
 
   lazy val bestBid: Option[SafeDouble] = for (h <- bids.headOption) yield h._1
   lazy val bestAsk: Option[SafeDouble] = for (h <- asks.headOption) yield h._1
@@ -20,13 +21,13 @@ class OrderBook private(val instrument: Instrument,
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def apply(op: OrderOp): OrderBook = op match {
-    case AddOrder(order) ⇒ this.addOrder(order)
-    case ChangeOrder(order) ⇒ this.addOrder(order)
-    case RemoveOrder(key) ⇒ this removeOrderById key.id
-    case ReplaceParty(party, partyBook, _) ⇒ this.replaceParty(party, partyBook)
+    case AddOrder(order, _) ⇒ this.addOrder(order)
+    case ChangeOrder(order, _) ⇒ this.addOrder(order)
+    case RemoveOrder(key, _) ⇒ this removeOrderById key.id
+    case ReplaceParty(party, partyBook, _, _) ⇒ this.replaceParty(party, partyBook)
   }
 
-  def addOrder(order: Order): OrderBook = {
+  def addOrder(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     require(instrument == order.key.instrument, "Order instrument should match order book instrument")
     val line = if (order.key.side == QuoteSide.Bid) bids else asks
     byKey.get(order.key) match {
@@ -39,8 +40,8 @@ class OrderBook private(val instrument: Instrument,
         val tmpLine = if (removedOldPrice.isEmpty) line - oldPrice else line + (oldPrice -> removedOldPrice)
         val newLine = tmpLine + (newPrice -> addedNewPrice)
         val newByKey = byKey + (order.key -> order)
-        if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey)
-        else new OrderBook(instrument, bids, newLine, newByKey)
+        if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
+        else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
       // no order with same key; adding new order to the book
       case None ⇒
         val newLine = line.get(order.price) match {
@@ -48,28 +49,28 @@ class OrderBook private(val instrument: Instrument,
           case None ⇒ line + (order.price -> Aggregate(order.price, order.key.side, order))
         }
         val newByKey = byKey + (order.key -> order)
-        if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey)
-        else new OrderBook(instrument, bids, newLine, newByKey)
+        if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
+        else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
     }
   }
 
-  def removeOrder(key: OrderKey): OrderBook = byKey.get(key) match {
+  def removeOrder(key: OrderKey, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
     case Some(order) ⇒
       val line = if (order.key.side == QuoteSide.Bid) bids else asks
       val removedOld = line(order.price) - key
       val newLine = if (removedOld.isEmpty) line - order.price else line + (order.price -> removedOld)
       val newByKey = byKey - key
-      if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey)
-      else new OrderBook(instrument, bids, newLine, newByKey)
+      if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
+      else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
     case None ⇒ this
   }
 
-  def removeOrderById(orderId: String): OrderBook = {
+  def removeOrderById(orderId: String, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     val toRemove = byKey.keys.filter(_.id == orderId)
     toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
   }
 
-  def replaceParty(party: Party, theirBook: OrderBook): OrderBook = {
+  def replaceParty(party: Party, theirBook: OrderBook, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     val filteredByParty = theirBook.byKey.filter(party == _._1.party)
     val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
     filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder o)
@@ -227,14 +228,16 @@ object OrderBook {
   private val ASCENDING = Ordering.by((x: SafeDouble) => x.toDouble)
   private val DESCENDING = ASCENDING.reverse
 
-  def empty(instrument: Instrument): OrderBook = new OrderBook(instrument)
+  def empty(instrument: Instrument, timestamp: Long = System.currentTimeMillis()): OrderBook = new OrderBook(instrument = instrument, timestamp = timestamp)
 
-  def apply(orders: Iterable[Order]): OrderBook = orders.headOption match {
+  def apply(orders: Iterable[Order], timestamp: Long = System.currentTimeMillis()): OrderBook = orders.headOption match {
     case Some(order) ⇒
-      val start: OrderBook = empty(order.key.instrument)
+      val start: OrderBook = empty(order.key.instrument, timestamp)
       orders.foldLeft(start)((a: OrderBook, b: Order) ⇒ a.addOrder(b))
     case None ⇒ throw new IllegalArgumentException("Can't make an order book from an empty list")
   }
 
-  def apply(orders: Order*): OrderBook = apply(orders.toList)
+  def apply(orders: Order*): OrderBook = apply(orders.toList, System.currentTimeMillis())
+
+  def apply(timestamp: Long, orders: Order*): OrderBook = apply(orders.toList, timestamp)
 }
