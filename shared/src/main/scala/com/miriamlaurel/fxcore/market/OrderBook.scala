@@ -21,10 +21,10 @@ class OrderBook private(val instrument: Instrument,
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def apply(op: OrderOp): OrderBook = op match {
-    case AddOrder(order, _) ⇒ this.addOrder(order)
-    case ChangeOrder(order, _) ⇒ this.addOrder(order)
-    case RemoveOrder(key, _) ⇒ this removeOrderById key.id
-    case ReplaceParty(party, partyBook, _, _) ⇒ this.replaceParty(party, partyBook)
+    case AddOrder(order, _) ⇒ this.addOrder(order, op.timestamp)
+    case ChangeOrder(order, _) ⇒ this.addOrder(order, op.timestamp)
+    case RemoveOrder(key, _) ⇒ this.removeOrderById(key.id, op.timestamp)
+    case ReplaceParty(party, partyBook, _, _) ⇒ this.replaceParty(party, partyBook, op.timestamp)
   }
 
   def addOrder(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
