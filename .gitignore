@@ -5,6 +5,6 @@
 target/
 lib/
 out/
-project/
+project/target/
 /jvm/target/
 /js/target/
