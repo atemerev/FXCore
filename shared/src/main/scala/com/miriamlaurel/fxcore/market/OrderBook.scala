@@ -21,10 +21,10 @@ class OrderBook private(val instrument: Instrument,
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def apply(op: OrderOp): OrderBook = op match {
-    case AddOrder(order, _) ⇒ this.addOrder(order, op.timestamp)
-    case ChangeOrder(order, _) ⇒ this.addOrder(order, op.timestamp)
-    case RemoveOrder(key, _) ⇒ this.removeOrderById(key.id, op.timestamp)
-    case ReplaceParty(party, partyBook, _, _) ⇒ this.replaceParty(party, partyBook, op.timestamp)
+    case AddOrder(order, ts) ⇒ this.addOrder(order, ts)
+    case ChangeOrder(key, newAmount, newPrice, ts) ⇒ this.changeOrder(key, newAmount, newPrice, ts)
+    case RemoveOrder(key, ts) ⇒ this.removeOrder(key, ts)
+    case ReplaceParty(party, partyBook, _, ts) ⇒ this.replaceParty(party, partyBook, ts)
   }
 
   def addOrder(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
@@ -52,6 +52,15 @@ class OrderBook private(val instrument: Instrument,
         if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
         else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
     }
+  }
+
+  def changeOrder(key: OrderKey, newAmount: Option[SafeDouble] = None, newPrice: Option[SafeDouble] = None, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
+    case Some(oldOrder) =>
+      val newOrder = oldOrder
+        .copy(amount = newAmount.getOrElse(oldOrder.amount))
+        .copy(price = newPrice.getOrElse(oldOrder.price))
+      addOrder(newOrder, timestamp)
+    case None => this
   }
 
   def removeOrder(key: OrderKey, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
@@ -114,7 +123,8 @@ class OrderBook private(val instrument: Instrument,
   @tailrec
   private def slice(side: QuoteSide.Value, amount: SafeDouble, taken: SafeDouble, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
-    if (line.isEmpty) acc else {
+    if (line.isEmpty) acc
+    else {
       val first = line.head._2.orders.head
       val newAcc = excludeId match {
         case Some(id) ⇒ if (id == first.key.id) acc else first :: acc
@@ -151,6 +161,7 @@ class OrderBook private(val instrument: Instrument,
   }
 
   def quote(amount: SafeDouble): Quote = quote(amount, None)
+
   def quote(amount: SafeDouble, excludeId: String): Quote = quote(amount, Some(excludeId))
 
   private def quoteSpread(amount: SafeDouble, excludeId: Option[String]): Quote = {
@@ -166,6 +177,7 @@ class OrderBook private(val instrument: Instrument,
   }
 
   def quoteSpread(amount: SafeDouble): Quote = quoteSpread(amount, None)
+
   def quoteSpread(amount: SafeDouble, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
 
   override def toString = bids.toString() + " | " + asks.toString()
@@ -215,6 +227,7 @@ object OrderBook {
       case that: Aggregate ⇒ this.orders equals that.orders
       case _ ⇒ false
     }
+
     override def hashCode(): Int = this.entries.values.hashCode()
   }
 

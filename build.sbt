@@ -7,14 +7,14 @@ lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
   name := "fxcore",
   organization := "com.miriamlaurel",
-  version := "2.3-SNAPSHOT"
+  version := "2.4-SNAPSHOT"
 )
 
 lazy val fxcore = crossProject.in(file(".")).
   settings(
     name := "fxcore",
     organization := "com.miriamlaurel",
-    version := "2.3-SNAPSHOT"
+    version := "2.4-SNAPSHOT"
   ).jvmSettings(
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.0.0",
