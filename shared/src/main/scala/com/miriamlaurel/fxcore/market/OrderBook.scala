@@ -223,6 +223,8 @@ object OrderBook {
 
     def size: Int = entries.size
 
+    override def toString = s"$price:$totalAmount" + (if (entries.size > 1) s"(${entries.size})" else "")
+
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Aggregate ⇒ this.orders equals that.orders
       case _ ⇒ false
