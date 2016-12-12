@@ -18,12 +18,12 @@ lazy val fxcore = crossProject.in(file(".")).
     version := "2.4-SNAPSHOT"
   ).jvmSettings(
     libraryDependencies ++= Seq(
-      "org.scalactic" %% "scalactic" % "3.0.0",
-      "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+      "org.scalactic" %% "scalactic" % "3.0.1",
+      "org.scalatest" %% "scalatest" % "3.0.1" % "test"
     )
   ).jsSettings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.0" % "test"
+      "org.scalatest" %%% "scalatest" % "3.0.1" % "test"
     )
   )
 
