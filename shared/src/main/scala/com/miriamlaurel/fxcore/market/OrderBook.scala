@@ -85,7 +85,7 @@ class OrderBook private(val instrument: Instrument,
     filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder o)
   }
 
-  def diff(prev: OrderBook): Iterable[OrderOp] = {
+  def diff(prev: OrderBook, changeExisting: Boolean = false): Iterable[OrderOp] = {
     @tailrec
     def compare(side: QuoteSide.Value, remainingCurrent: Iterable[Order], remainingPrev: Iterable[Order], acc: List[OrderOp]): List[OrderOp] = {
       if (remainingCurrent.isEmpty && remainingPrev.isEmpty) {
