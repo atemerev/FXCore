@@ -1,7 +1,6 @@
 import sbt.Keys._
 
 scalaVersion in ThisBuild := "2.12.2"
-sbtVersion in ThisBuild := "0.13.15"
 
 lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
