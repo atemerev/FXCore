@@ -1,8 +1,6 @@
 import sbt.Keys._
 
-scalaVersion in ThisBuild := "2.12.0"
-sbtVersion in ThisBuild := "0.13.13"
-crossScalaVersions := Seq("2.11.8", "2.12.0")
+scalaVersion in ThisBuild := "2.12.2"
 
 lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
