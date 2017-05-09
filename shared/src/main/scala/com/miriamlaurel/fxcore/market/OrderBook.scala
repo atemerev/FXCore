@@ -180,11 +180,23 @@ class OrderBook private(val instrument: Instrument,
 
   def quoteSpread(amount: SafeDouble, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
 
-  override def toString = bids.toString() + " | " + asks.toString()
+  override def toString: String = bids.toString() + " | " + asks.toString()
 
   private def weightedAvg(orders: List[Order]): SafeDouble =
     orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
 
+  def canEqual(other: Any): Boolean = other.isInstanceOf[OrderBook]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: OrderBook =>
+      (that canEqual this) &&
+        instrument == that.instrument &&
+        bids == that.bids &&
+        asks == that.asks
+    case _ => false
+  }
+
+  override def hashCode(): Int = Seq(instrument, bids, asks).##
 }
 
 object OrderBook {
@@ -223,7 +235,7 @@ object OrderBook {
 
     def size: Int = entries.size
 
-    override def toString = "(" + entries.values.map(_.amount).mkString(",") + ")"
+    override def toString: String = "(" + entries.values.map(_.amount).mkString(",") + ")"
 
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: Aggregate ⇒ this.orders equals that.orders
