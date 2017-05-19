@@ -180,7 +180,7 @@ class OrderBook private(val instrument: Instrument,
 
   def quoteSpread(amount: SafeDouble, excludeId: String): Quote = quoteSpread(amount, Some(excludeId))
 
-  override def toString: String = bids.toString() + " | " + asks.toString()
+  override def toString: String = instrument.toString + ": " + bids.toSeq.mkString(",") + " | " + asks.toSeq.mkString(",")
 
   private def weightedAvg(orders: List[Order]): SafeDouble =
     orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
