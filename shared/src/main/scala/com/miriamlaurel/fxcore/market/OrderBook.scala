@@ -18,6 +18,8 @@ class OrderBook private(val instrument: Instrument,
   lazy val bestAsk: Option[SafeDouble] = for (h <- asks.headOption) yield h._1
   lazy val best = Quote(instrument, bestBid, bestAsk)
 
+  lazy val collapsed = OrderBook(bids.values.map(_.collapse) ++ asks.values.map(_.collapse), timestamp)
+
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def apply(op: OrderOp): OrderBook = op match {
@@ -201,9 +203,16 @@ class OrderBook private(val instrument: Instrument,
 
 object OrderBook {
 
+
   class Aggregate private(val price: SafeDouble, val side: QuoteSide.Value, entries: Map[OrderKey, Order], val totalAmount: SafeDouble) {
 
     lazy val orders: Iterable[Order] = entries.values
+
+    lazy val collapse: Order = {
+      val fst = entries.head
+      val key = fst._1
+      Order(key, totalAmount, price)
+    }
 
     require(isEmpty || totalAmount > 0)
 
