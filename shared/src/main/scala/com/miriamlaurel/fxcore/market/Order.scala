@@ -11,9 +11,9 @@ case class Order(key: OrderKey,
   require(amount > 0)
   require(price > 0)
 
-  override def compare(that: Order) = if (key.side == QuoteSide.Ask) price compare that.price else that.price compare price
+  override def compare(that: Order): Int = if (key.side == QuoteSide.Ask) price compare that.price else that.price compare price
 
-  override def toString = "%s %f %s @%f".format(key.toString, amount.toDouble, key.instrument.toString, price.toDouble)
+  override def toString: String = "%s %f @%f".format(key.toString, amount.toDouble, price.toDouble)
 }
 
 object Order {
