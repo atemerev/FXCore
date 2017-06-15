@@ -1,9 +1,9 @@
 package com.miriamlaurel.fxcore.market
 
-import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.OrderBook.Aggregate
 import com.miriamlaurel.fxcore.party.Party
+import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
@@ -122,6 +122,23 @@ class OrderBook private(val instrument: Instrument,
     bidOps ::: askOps
   }
 
+  def subtractOrder(order: Order): OrderBook = {
+    val line = if (order.key.side == QuoteSide.Bid) bids else asks
+    val (newLine, newByKey) = line.get(order.price) match {
+      case Some(agg) =>
+        val newAgg = agg - order.amount
+        if (newAgg.totalAmount == 0) {
+          (line - order.price, byKey - order.key)
+        } else {
+          (line + (order.price -> newAgg), byKey)
+        }
+      case None => line
+    }
+    if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp) else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
+  }
+
+  def subtract(other: OrderBook): OrderBook = other.byKey.values.foldLeft(this)(_.subtractOrder(_))
+
   @tailrec
   private def slice(side: QuoteSide.Value, amount: SafeDouble, taken: SafeDouble, acc: List[Order], excludeId: Option[String]): List[Order] = {
     val line = if (side == QuoteSide.Bid) bids else asks
@@ -237,6 +254,17 @@ object OrderBook {
           case None ⇒ totalAmount
         }
         new Aggregate(price, side, newEntries, newAmount)
+      }
+    }
+
+    def -(amount: SafeDouble): Aggregate = {
+      val exactMatch = orders.find(_.amount == amount)
+      exactMatch match {
+        case Some(o) => this - o.key
+        case None => orders.find(_.amount > amount) match {
+          case Some(largerOrder) => this + largerOrder.copy(amount = largerOrder.amount - amount)
+          case None => this
+        }
       }
     }
 

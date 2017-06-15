@@ -13,7 +13,7 @@ case class Order(key: OrderKey,
 
   override def compare(that: Order): Int = if (key.side == QuoteSide.Ask) price compare that.price else that.price compare price
 
-  override def toString: String = "%s %f @%f".format(key.toString, amount.toDouble, price.toDouble)
+  override def toString: String = "%s %s @%s".format(key.toString, amount.toDouble, price.toDouble)
 }
 
 object Order {
