@@ -132,7 +132,7 @@ class OrderBook private(val instrument: Instrument,
         } else {
           (line + (order.price -> newAgg), byKey)
         }
-      case None => line
+      case None => (line, byKey)
     }
     if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp) else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
   }
