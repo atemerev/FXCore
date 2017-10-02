@@ -6,7 +6,7 @@ import com.miriamlaurel.fxcore.party.Party
 import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{ListMap, SortedMap}
 
 class OrderBook private(val instrument: Instrument,
                         val bids: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.DESCENDING),
@@ -229,7 +229,7 @@ class OrderBook private(val instrument: Instrument,
 object OrderBook {
 
 
-  class Aggregate private(val price: SafeDouble, val side: QuoteSide.Value, entries: Map[OrderKey, Order], val totalAmount: SafeDouble) {
+  class Aggregate private(val price: SafeDouble, val side: QuoteSide.Value, entries: ListMap[OrderKey, Order], val totalAmount: SafeDouble) {
 
     lazy val orders: Iterable[Order] = entries.values
 
@@ -255,7 +255,7 @@ object OrderBook {
 
     def -(orderKey: OrderKey): Aggregate = {
       val newEntries = entries - orderKey
-      if (newEntries.isEmpty) new Aggregate(price, side, Map.empty, 0)
+      if (newEntries.isEmpty) new Aggregate(price, side, ListMap.empty, 0)
       else {
         val newAmount = entries.get(orderKey) match {
           case Some(existing) ⇒ totalAmount - existing.amount
@@ -292,7 +292,7 @@ object OrderBook {
 
   object Aggregate {
     def apply(price: SafeDouble, side: QuoteSide.Value, orders: Order*): Aggregate = {
-      val empty = new Aggregate(price, side, Map.empty, 0)
+      val empty = new Aggregate(price, side, ListMap.empty, 0)
       orders.foldLeft(empty)((agg: Aggregate, ord: Order) ⇒ agg + ord)
     }
   }
