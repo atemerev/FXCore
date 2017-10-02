@@ -12,8 +12,8 @@ class OrderBookTest extends FunSuite with Matchers {
   val ts = 1273787999996L
   private val orderBook = fromCsv("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000")
 
-  test("trim should leave minimum amount of best orders totalling greater than trim amount") {
-    "1273787999996,EUR/USD,BIDS,1.2523,1000000,ASKS,1.2524,1000000" should equal(toCsv(orderBook.trim(SafeDouble(500000)), ts))
+  test("trim should leave best orders totalling exactly the trim amount") {
+    "1273787999996,EUR/USD,BIDS,1.2523,500000,ASKS,1.2524,500000" should equal(toCsv(orderBook.trim(SafeDouble(500000)), ts))
   }
 
   test("quote to a limit should respect trimming rules") {
@@ -66,7 +66,7 @@ object OrderBookTest {
     OrderBook(orders)
   }
 
-  def toCsv(orderBook: OrderBook, timestamp: Long) = {
+  def toCsv(orderBook: OrderBook, timestamp: Long): String = {
     timestamp + "," + orderBook.instrument.toString + ",BIDS," +
       orderBook.bids.values.flatMap(_.orders).toSeq.reverse.map(o ⇒ o.price.toString + "," + o.amount.toString).mkString(",") +
       ",ASKS," +

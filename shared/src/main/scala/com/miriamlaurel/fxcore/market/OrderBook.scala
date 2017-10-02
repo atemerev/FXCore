@@ -145,11 +145,19 @@ class OrderBook private(val instrument: Instrument,
     if (line.isEmpty) acc
     else {
       val first = line.head._2.orders.head
-      val newAcc = excludeId match {
-        case Some(id) ⇒ if (id == first.key.id) acc else first :: acc
-        case None ⇒ first :: acc
+      val (newAcc, grabbedAmount) = excludeId match {
+        case Some(id) ⇒ if (id == first.key.id) (acc, taken) else (first :: acc, taken + first.amount)
+        case None ⇒ (first :: acc, taken + first.amount)
       }
-      if ((taken + first.amount) >= amount) newAcc else (this removeOrder first.key).slice(side, amount, taken + first.amount, first :: acc, excludeId)
+      if (grabbedAmount == amount) {
+        newAcc
+      } else if (grabbedAmount > amount) {
+        val amountDiff = grabbedAmount - amount
+        val amended = first.copy(amount = first.amount - amountDiff)
+        amended :: acc
+      } else {
+        (this removeOrder first.key).slice(side, amount, grabbedAmount, first :: acc, excludeId)
+      }
     }
   }
 
