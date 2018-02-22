@@ -13,7 +13,7 @@ lazy val fxcore = crossProject.in(file(".")).
   settings(
     name := "fxcore",
     organization := "com.miriamlaurel",
-    version := "2.5-SNAPSHOT"
+    version := "2.6-SNAPSHOT"
   ).jvmSettings(
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.0.1",
