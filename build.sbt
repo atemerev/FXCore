@@ -6,7 +6,7 @@ lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
   name := "fxcore",
   organization := "com.miriamlaurel",
-  version := "2.5-SNAPSHOT"
+  version := "2.6-SNAPSHOT"
 )
 
 lazy val fxcore = crossProject.in(file(".")).

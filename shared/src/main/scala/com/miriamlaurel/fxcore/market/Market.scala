@@ -6,19 +6,15 @@ import com.miriamlaurel.fxcore.instrument.Instrument
 
 case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
 
-  def apply(instrument: Instrument): OrderBook = books(instrument)
+  def apply(instrument: Instrument): OrderBook = get(instrument)
 
-  def get(instrument: Instrument): Option[OrderBook] = books.get(instrument)
+  def get(instrument: Instrument): OrderBook = books.getOrElse(instrument, OrderBook.empty(instrument))
 
   def put(book: OrderBook): Market = copy(books = books + (book.instrument -> book))
 
   def put(op: OrderOp): Market = {
-    val oldBook = this.get(op.instrument) match {
-      case Some(book) ⇒ book
-      case None ⇒ OrderBook.empty(op.instrument)
-    }
-    val newBook = oldBook.apply(op)
-    this.put(newBook)
+    val newBook = get(op.instrument).apply(op)
+    put(newBook)
   }
 
   def quote(instrument: Instrument, amount: SafeDouble = 0): Option[Quote] = {
@@ -52,8 +48,8 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
   private def quoteToPivot(asset: AssetClass): Option[Quote] = {
     val straight = Instrument(asset, pivot)
     val reverse = Instrument(pivot, asset)
-    if (get(straight).isDefined) Some(apply(straight).best)
-    else if (get(reverse).isDefined) Some(apply(reverse).best) else None
+    if (books.get(straight).isDefined) Some(apply(straight).best)
+    else if (books.get(reverse).isDefined) Some(apply(reverse).best) else None
   }
 
   private def isStraight(instrument: Instrument) = pivot == instrument.counter
