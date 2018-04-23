@@ -38,7 +38,7 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
   def ==(that: Int): Boolean = this.dbl == that.toDouble
   def ==(that: Long): Boolean = this.dbl == that.toDouble
 
-  override def toString = if (dbl == dbl.toInt) dbl.toInt.toString else dbl.toString
+  override def toString = if (dbl == dbl.toInt) dbl.toInt.toString else BigDecimal.valueOf(dbl).bigDecimal.stripTrailingZeros.toPlainString
 }
 
 object SafeDouble {
