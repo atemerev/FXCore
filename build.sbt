@@ -1,6 +1,6 @@
 import sbt.Keys._
 
-scalaVersion in ThisBuild := "2.12.4"
+scalaVersion in ThisBuild := "2.12.5"
 
 lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
@@ -16,12 +16,12 @@ lazy val fxcore = crossProject.in(file(".")).
     version := "2.6-SNAPSHOT"
   ).jvmSettings(
     libraryDependencies ++= Seq(
-      "org.scalactic" %% "scalactic" % "3.0.1",
+      "org.scalactic" %% "scalactic" % "3.0.3",
       "org.scalatest" %% "scalatest" % "3.0.1" % "test"
     )
   ).jsSettings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.1" % "test"
+      "org.scalatest" %%% "scalatest" % "3.0.3" % "test"
     )
   )
 
