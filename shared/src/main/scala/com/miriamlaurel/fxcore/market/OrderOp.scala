@@ -6,7 +6,7 @@ import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.party.Party
 
-sealed trait OrderOp extends Timestamp {
+trait OrderOp extends Timestamp {
   def instrument: Instrument
   def party: Party
   def id: String
@@ -35,4 +35,15 @@ case class ReplaceParty(party: Party,
                         override val id: String = UUID.randomUUID().toString,
                         override val timestamp: Long = System.currentTimeMillis()) extends OrderOp {
   override def instrument: Instrument = orderBook.instrument
+}
+
+case class MatchOrders(takerKey: OrderKey, makerKey: OrderKey, amount: SafeDouble, price: SafeDouble) extends OrderOp {
+  require(makerKey.instrument == takerKey.instrument)
+  require(makerKey.side != takerKey.side)
+
+  override def instrument: Instrument = takerKey.instrument
+
+  override def party: Party = takerKey.party
+
+  override def id: String = takerKey.id
 }
