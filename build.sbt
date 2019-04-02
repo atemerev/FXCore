@@ -1,12 +1,12 @@
 import sbt.Keys._
 
-scalaVersion in ThisBuild := "2.12.7"
+scalaVersion in ThisBuild := "2.12.8"
 
 lazy val root = project.in(file(".")).
   aggregate(js, jvm).settings(
   name := "fxcore",
   organization := "com.miriamlaurel",
-  version := "2.7-SNAPSHOT"
+  version := "2.8-SNAPSHOT"
 )
 
 lazy val fxcore = crossProject.in(file(".")).
