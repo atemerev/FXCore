@@ -1,5 +1,7 @@
 package com.miriamlaurel.fxcore.market
 
+import java.util.UUID
+
 import com.miriamlaurel.fxcore.instrument.Instrument
 import com.miriamlaurel.fxcore.market.OrderBook.Aggregate
 import com.miriamlaurel.fxcore.party.Party
@@ -56,8 +58,15 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
-  def replaceByPrice(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
-    val removed = removePrice(order.key.side, order.price, timestamp)
+  def replaceByPrice(party: Party, side: QuoteSide.Value, price: SafeDouble, amount: SafeDouble, timestamp: Long = System.currentTimeMillis()): OrderBook = {
+    val removed = removePrice(side, price, timestamp)
+    val line = if (side == QuoteSide.Bid) bids else asks
+    val id = line.get(price) match {
+      case Some(agg) => agg.orders.head.key.id
+      case None => UUID.randomUUID().toString
+    }
+    val synthesizedKey = OrderKey(party, instrument, side, id)
+    val order = Order(synthesizedKey, amount, price)
     removed.addOrder(order, timestamp)
   }
 
