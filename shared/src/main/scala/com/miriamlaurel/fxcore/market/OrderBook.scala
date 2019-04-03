@@ -56,6 +56,22 @@ class OrderBook private(val instrument: Instrument,
     }
   }
 
+  def replaceByPrice(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
+    val removed = removePrice(order.key.side, order.price, timestamp)
+    removed.addOrder(order, timestamp)
+  }
+
+  def removePrice(side: QuoteSide.Value, price: SafeDouble, timestamp: Long = System.currentTimeMillis()): OrderBook = {
+    val line = if (side == QuoteSide.Bid) bids else asks
+    val newLine = line - price
+    val newByKey = line.get(price) match {
+      case Some(agg) => byKey -- agg.orders.map(_.key)
+      case None => byKey
+    }
+    if (side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
+    else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
+  }
+
   def changeOrder(key: OrderKey, newAmount: Option[SafeDouble] = None, newPrice: Option[SafeDouble] = None, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
     case Some(oldOrder) =>
       val newOrder = oldOrder
