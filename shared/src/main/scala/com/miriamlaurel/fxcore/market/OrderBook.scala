@@ -234,6 +234,8 @@ class OrderBook private(val instrument: Instrument,
 
   override def toString: String = instrument.toString + ": " + bids.toSeq.mkString(",") + " | " + asks.toSeq.mkString(",")
 
+  def setTimestamp(newTimestamp: Long): OrderBook = new OrderBook(instrument, bids, asks, byKey, newTimestamp)
+
   private def weightedAvg(orders: List[Order]): SafeDouble =
     orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
 
