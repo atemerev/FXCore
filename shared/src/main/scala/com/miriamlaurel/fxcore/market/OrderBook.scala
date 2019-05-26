@@ -87,7 +87,7 @@ class OrderBook private(val instrument: Instrument,
         .copy(amount = newAmount.getOrElse(oldOrder.amount))
         .copy(price = newPrice.getOrElse(oldOrder.price))
       addOrder(newOrder, timestamp)
-    case None => this
+    case None => this.setTimestamp(timestamp)
   }
 
   def removeOrder(key: OrderKey, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
@@ -98,7 +98,7 @@ class OrderBook private(val instrument: Instrument,
       val newByKey = byKey - key
       if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
       else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
-    case None ⇒ this
+    case None ⇒ this.setTimestamp(timestamp)
   }
 
   def removeOrderById(orderId: String, timestamp: Long = System.currentTimeMillis()): OrderBook = {
@@ -109,7 +109,7 @@ class OrderBook private(val instrument: Instrument,
   def replaceParty(party: Party, theirBook: OrderBook, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     val filteredByParty = theirBook.byKey.filter(party == _._1.party)
     val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
-    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder o)
+    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder o).setTimestamp(timestamp)
   }
 
   def diff(prev: OrderBook, changeExisting: Boolean = false): Iterable[OrderOp] = {
