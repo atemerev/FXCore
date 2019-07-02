@@ -2,11 +2,11 @@ package com.miriamlaurel.fxcore.asset
 
 object Metal {
   def apply(code: String): Metal = code match {
-    case "XAU" ⇒ Gold
-    case "XAG" ⇒ Silver
-    case "XPT" ⇒ Platinum
-    case "XPD" ⇒ Palladium
-    case _ ⇒ throw new IllegalArgumentException("Metal code is not recognized: " + code)
+    case "XAU" => Gold
+    case "XAG" => Silver
+    case "XPT" => Platinum
+    case "XPD" => Palladium
+    case _ => throw new IllegalArgumentException("Metal code is not recognized: " + code)
   }
 }
 

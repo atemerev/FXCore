@@ -22,4 +22,6 @@ object SafeDoubleNumeric extends Fractional[SafeDouble] {
   override def toDouble(x: SafeDouble): Double = x.value
 
   override def compare(x: SafeDouble, y: SafeDouble): Int = x.compare(y)
+
+  override def parseString(str: String): Option[SafeDouble] = str.toDoubleOption.map(SafeDouble.apply)
 }

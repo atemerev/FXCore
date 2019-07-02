@@ -19,13 +19,13 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
     var newMap = map
     for (action <- diff.actions) {
       action match {
-        case AddPosition(p) ⇒
+        case AddPosition(p) =>
           require(!(newMap contains p.instrument))
           newMap = newMap + (p.instrument -> p)
-        case RemovePosition(p) ⇒
+        case RemovePosition(p) =>
           require(newMap contains p.instrument)
           newMap = newMap - p.instrument
-        case _ ⇒ // Ignore
+        case _ => // Ignore
       }
     }
     new StrictPortfolio(newMap)
@@ -38,8 +38,8 @@ class StrictPortfolio protected(val map: Map[Instrument, Position]) extends Port
   }
 
   def positions(instrument: Instrument): Iterable[Position] = position(instrument) match {
-    case Some(pos) ⇒ List(pos)
-    case None ⇒ List()
+    case Some(pos) => List(pos)
+    case None => List()
   }
 
   /*!

@@ -133,18 +133,18 @@ case class Position(primary: Monetary,
    */
   def diff(oldPosition: Option[Position]): PortfolioDiff = oldPosition match {
     // If no old position found for this instrument -> add new position
-    case None ⇒ PortfolioDiff(AddPosition(this))
+    case None => PortfolioDiff(AddPosition(this))
     // If old position is found...
-    case Some(oldP) ⇒
+    case Some(oldP) =>
       // Merge old and new positions
       val (merged, profitLoss) = oldP merge this
       merged match {
         // If merged positions collapsed -> remove old position, add new finished deal
-        case None ⇒
+        case None =>
           val deal = Deal(oldP, this.price, this.timestamp, profitLoss)
           PortfolioDiff(RemovePosition(oldP), CreateDeal(deal))
         // If merging produced new position...
-        case Some(remainingPosition) ⇒
+        case Some(remainingPosition) =>
           // If position sides were equal, it is added position -> modify existing position
           if (oldP.side == this.side)
             PortfolioDiff(RemovePosition(oldP), AddPosition(remainingPosition))
@@ -191,23 +191,23 @@ object PositionSide extends Enumeration {
   What quote side to use to open a position?
    */
   def open(side: PositionSide.Value): QuoteSide.Value = side match {
-    case Long ⇒ QuoteSide.Ask
-    case Short ⇒ QuoteSide.Bid
+    case Long => QuoteSide.Ask
+    case Short => QuoteSide.Bid
   }
 
   /*!
   What quote side to use to close a position?
    */
   def close(side: PositionSide.Value): QuoteSide.Value = side match {
-    case Long ⇒ QuoteSide.Bid
-    case Short ⇒ QuoteSide.Ask
+    case Long => QuoteSide.Bid
+    case Short => QuoteSide.Ask
   }
 
   /*!
   Reverse the position side.
    */
   def reverse(side: PositionSide.Value): PositionSide.Value = side match {
-    case Long ⇒ PositionSide.Short
-    case Short ⇒ PositionSide.Long
+    case Long => PositionSide.Short
+    case Short => PositionSide.Long
   }
 }

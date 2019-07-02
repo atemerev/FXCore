@@ -9,6 +9,7 @@ import com.miriamlaurel.fxcore.{SafeDouble, Timestamp}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.{ListMap, SortedMap}
+import scala.math.Ordering.Double.TotalOrdering
 
 class OrderBook private(val instrument: Instrument,
                         val bids: SortedMap[SafeDouble, Aggregate] = SortedMap()(OrderBook.DESCENDING),
@@ -25,10 +26,10 @@ class OrderBook private(val instrument: Instrument,
   def isFull: Boolean = bids.nonEmpty && asks.nonEmpty
 
   def apply(op: OrderOp): OrderBook = op match {
-    case AddOrder(order, ts) ⇒ this.addOrder(order, ts)
-    case ChangeOrder(key, newAmount, newPrice, ts) ⇒ this.changeOrder(key, newAmount, newPrice, ts)
-    case RemoveOrder(key, ts) ⇒ this.removeOrder(key, ts)
-    case ReplaceParty(party, partyBook, _, ts) ⇒ this.replaceParty(party, partyBook, ts)
+    case AddOrder(order, ts) => this.addOrder(order, ts)
+    case ChangeOrder(key, newAmount, newPrice, ts) => this.changeOrder(key, newAmount, newPrice, ts)
+    case RemoveOrder(key, ts) => this.removeOrder(key, ts)
+    case ReplaceParty(party, partyBook, _, ts) => this.replaceParty(party, partyBook, ts)
   }
 
   def addOrder(order: Order, timestamp: Long = System.currentTimeMillis()): OrderBook = {
@@ -36,7 +37,7 @@ class OrderBook private(val instrument: Instrument,
     val line = if (order.key.side == QuoteSide.Bid) bids else asks
     byKey.get(order.key) match {
       // order with same key exists, need to be replaced
-      case Some(existingOrder) ⇒
+      case Some(existingOrder) =>
         val oldPrice = existingOrder.price
         val newPrice = order.price
         val removedOldPrice = line(oldPrice) - existingOrder.key
@@ -47,10 +48,10 @@ class OrderBook private(val instrument: Instrument,
         if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
         else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
       // no order with same key; adding new order to the book
-      case None ⇒
+      case None =>
         val newLine = line.get(order.price) match {
-          case Some(orders) ⇒ line + (order.price -> (orders + order))
-          case None ⇒ line + (order.price -> Aggregate(order.price, order.key.side, order))
+          case Some(orders) => line + (order.price -> (orders + order))
+          case None => line + (order.price -> Aggregate(order.price, order.key.side, order))
         }
         val newByKey = byKey + (order.key -> order)
         if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
@@ -91,25 +92,25 @@ class OrderBook private(val instrument: Instrument,
   }
 
   def removeOrder(key: OrderKey, timestamp: Long = System.currentTimeMillis()): OrderBook = byKey.get(key) match {
-    case Some(order) ⇒
+    case Some(order) =>
       val line = if (order.key.side == QuoteSide.Bid) bids else asks
       val removedOld = line(order.price) - key
       val newLine = if (removedOld.isEmpty) line - order.price else line + (order.price -> removedOld)
       val newByKey = byKey - key
       if (order.key.side == QuoteSide.Bid) new OrderBook(instrument, newLine, asks, newByKey, timestamp)
       else new OrderBook(instrument, bids, newLine, newByKey, timestamp)
-    case None ⇒ this.setTimestamp(timestamp)
+    case None => this.setTimestamp(timestamp)
   }
 
   def removeOrderById(orderId: String, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     val toRemove = byKey.keys.filter(_.id == orderId)
-    toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
+    toRemove.foldLeft(this)((b: OrderBook, k: OrderKey) => b removeOrder k)
   }
 
   def replaceParty(party: Party, theirBook: OrderBook, timestamp: Long = System.currentTimeMillis()): OrderBook = {
     val filteredByParty = theirBook.byKey.filter(party == _._1.party)
-    val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) ⇒ b removeOrder k)
-    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) ⇒ b addOrder o).setTimestamp(timestamp)
+    val removed = filteredByParty.keys.foldLeft(this)((b: OrderBook, k: OrderKey) => b removeOrder k)
+    filteredByParty.values.foldLeft(removed)((b: OrderBook, o: Order) => b addOrder o).setTimestamp(timestamp)
   }
 
   def diff(prev: OrderBook, changeExisting: Boolean = false): Iterable[OrderOp] = {
@@ -171,8 +172,8 @@ class OrderBook private(val instrument: Instrument,
     else {
       val first = line.head._2.orders.head
       val (newAcc, grabbedAmount) = excludeId match {
-        case Some(id) ⇒ if (id == first.key.id) (acc, taken) else (first :: acc, taken + first.amount)
-        case None ⇒ (first :: acc, taken + first.amount)
+        case Some(id) => if (id == first.key.id) (acc, taken) else (first :: acc, taken + first.amount)
+        case None => (first :: acc, taken + first.amount)
       }
       if (grabbedAmount == amount) {
         newAcc
@@ -237,7 +238,7 @@ class OrderBook private(val instrument: Instrument,
   def setTimestamp(newTimestamp: Long): OrderBook = new OrderBook(instrument, bids, asks, byKey, newTimestamp)
 
   private def weightedAvg(orders: List[Order]): SafeDouble =
-    orders.map(order ⇒ order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
+    orders.map(order => order.price * order.amount).foldLeft(SafeDouble(0))(_ + _) / orders.map(_.amount).foldLeft(SafeDouble(0))(_ + _)
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[OrderBook]
 
@@ -274,8 +275,8 @@ object OrderBook {
       require(this.side == newEntry.key.side)
 
       val newTotal = entries.get(newEntry.key) match {
-        case Some(existing) ⇒ totalAmount - existing.amount + newEntry.amount
-        case None ⇒ totalAmount + newEntry.amount
+        case Some(existing) => totalAmount - existing.amount + newEntry.amount
+        case None => totalAmount + newEntry.amount
       }
       new Aggregate(price, side, entries + (newEntry.key -> newEntry), newTotal)
     }
@@ -285,8 +286,8 @@ object OrderBook {
       if (newEntries.isEmpty) new Aggregate(price, side, ListMap.empty, 0)
       else {
         val newAmount = entries.get(orderKey) match {
-          case Some(existing) ⇒ totalAmount - existing.amount
-          case None ⇒ totalAmount
+          case Some(existing) => totalAmount - existing.amount
+          case None => totalAmount
         }
         new Aggregate(price, side, newEntries, newAmount)
       }
@@ -310,8 +311,8 @@ object OrderBook {
     override def toString: String = "(" + entries.values.map(_.amount).mkString(",") + ")"
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Aggregate ⇒ this.orders equals that.orders
-      case _ ⇒ false
+      case that: Aggregate => this.orders equals that.orders
+      case _ => false
     }
 
     override def hashCode(): Int = this.entries.values.hashCode()
@@ -320,20 +321,20 @@ object OrderBook {
   object Aggregate {
     def apply(price: SafeDouble, side: QuoteSide.Value, orders: Order*): Aggregate = {
       val empty = new Aggregate(price, side, ListMap.empty, 0)
-      orders.foldLeft(empty)((agg: Aggregate, ord: Order) ⇒ agg + ord)
+      orders.foldLeft(empty)((agg: Aggregate, ord: Order) => agg + ord)
     }
   }
 
-  private val ASCENDING = Ordering.by((x: SafeDouble) => x.toDouble)
+  private val ASCENDING = TotalOrdering.on((x: SafeDouble) => x.toDouble)
   private val DESCENDING = ASCENDING.reverse
 
   def empty(instrument: Instrument, timestamp: Long = System.currentTimeMillis()): OrderBook = new OrderBook(instrument = instrument, timestamp = timestamp)
 
   def apply(orders: Iterable[Order], timestamp: Long = System.currentTimeMillis()): OrderBook = orders.headOption match {
-    case Some(order) ⇒
+    case Some(order) =>
       val start: OrderBook = empty(order.key.instrument, timestamp)
-      orders.foldLeft(start)((a: OrderBook, b: Order) ⇒ a.addOrder(b))
-    case None ⇒ throw new IllegalArgumentException("Can't make an order book from an empty list")
+      orders.foldLeft(start)((a: OrderBook, b: Order) => a.addOrder(b))
+    case None => throw new IllegalArgumentException("Can't make an order book from an empty list")
   }
 
   def apply(orders: Order*): OrderBook = apply(orders.toList, System.currentTimeMillis())

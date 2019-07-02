@@ -40,8 +40,8 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
               to: AssetClass,
               side: QuoteSide.Value,
               amount: SafeDouble = 0): Option[Money] = from match {
-    case Zilch ⇒ Some(Zilch)
-    case m: Monetary ⇒ for (q <- quote(Instrument(m.asset, to), amount);
+    case Zilch => Some(Zilch)
+    case m: Monetary => for (q <- quote(Instrument(m.asset, to), amount);
                             p <- q.apply(side)) yield Money(p * m.amount, to)
   }
 
@@ -58,5 +58,5 @@ case class Market(books: Map[Instrument, OrderBook], pivot: Currency = USD) {
 }
 
 object Market {
-  def apply(books: OrderBook*): Market = Market(books.map(s ⇒ s.instrument -> s).toMap)
+  def apply(books: OrderBook*): Market = Market(books.map(s => s.instrument -> s).toMap)
 }

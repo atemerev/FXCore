@@ -37,8 +37,8 @@ case object Zilch extends Money {
   def unary_- = Zilch
 
   def compare(that: Money) = that match {
-    case Zilch ⇒ 0
-    case m: Monetary ⇒ if (m.amount > 0) -1 else 1
+    case Zilch => 0
+    case m: Monetary => if (m.amount > 0) -1 else 1
   }
 
   override def toString = "0"
@@ -47,16 +47,16 @@ case object Zilch extends Money {
 case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
 
   def +(that: Money) = that match {
-    case Zilch ⇒ this
-    case m: Monetary ⇒
+    case Zilch => this
+    case m: Monetary =>
       require(this.asset == m.asset)
       val sum = this.amount + m.amount
       if (sum == 0) Zilch else Monetary(sum, asset)
   }
 
   def -(that: Money) = that match {
-    case Zilch ⇒ this
-    case m: Monetary ⇒
+    case Zilch => this
+    case m: Monetary =>
       require(this.asset == m.asset)
       val diff = this.amount - m.amount
       if (diff == 0) Zilch else Monetary(diff, asset)
@@ -71,8 +71,8 @@ case class Monetary(amount: SafeDouble, asset: AssetClass) extends Money {
   def abs = Monetary(math.abs(amount), asset)
 
   def compare(that: Money) = that match {
-    case Zilch ⇒ if (amount > 0) 1 else -1
-    case m: Monetary ⇒
+    case Zilch => if (amount > 0) 1 else -1
+    case m: Monetary =>
       require(this.asset == m.asset, "Assets do not match")
       this.amount compare m.amount
   }

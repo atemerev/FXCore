@@ -31,7 +31,7 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
   def toDouble: Double = dbl
 
   // Yes, we can do that!
-  override def compare(that: SafeDouble): Int = Ordering.Double.compare(this.dbl, that.dbl)
+  override def compare(that: SafeDouble): Int = java.lang.Double.compare(this.dbl, that.dbl)
 
   // And that!
   def ==(that: SafeDouble): Boolean = this.dbl == that.dbl

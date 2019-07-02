@@ -34,7 +34,7 @@ object QuoteSide extends Enumeration {
   val Bid, Ask = Value
 
   def reverse(side: QuoteSide.Value): QuoteSide.Value = side match {
-    case Bid ⇒ Ask
-    case Ask ⇒ Bid
+    case Bid => Ask
+    case Ask => Bid
   }
 }

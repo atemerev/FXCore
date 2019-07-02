@@ -23,15 +23,15 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
     var newDetails = details
     for (action <- diff.actions) {
       action match {
-        case AddPosition(p) ⇒
+        case AddPosition(p) =>
           val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
           require(!(byInstrument contains p.id))
           newDetails = newDetails + (p.instrument -> (byInstrument + (p.id -> p)))
-        case RemovePosition(p) ⇒
+        case RemovePosition(p) =>
           val byInstrument = newDetails.getOrElse(p.instrument, Map[UUID, Position]())
           require(byInstrument contains p.id)
           newDetails = newDetails + (p.instrument -> (byInstrument - p.id))
-        case _ ⇒ // Ignore
+        case _ => // Ignore
       }
     }
     new NonStrictPortfolio(newDetails)
@@ -43,17 +43,17 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
   profit or loss, which is stored in a diff value as an "adjustment".
    */
   def mergePositions(ids: Set[UUID]): (NonStrictPortfolio, PortfolioDiff) = {
-    val toMerge = positions.filter(position ⇒ ids.contains(position.id))
+    val toMerge = positions.filter(position => ids.contains(position.id))
     if (toMerge.isEmpty) (this, PortfolioDiff())
     else {
       require(toMerge.map(_.instrument).toSet.size == 1, "Can't merge positions with different instruments")
       val instrument = toMerge.head.instrument
       var merged: Option[Position] = None
       var adjustment: Money = Zilch
-      toMerge.foreach(position ⇒ {
+      toMerge.foreach(position => {
         merged match {
-          case None ⇒ merged = Some(position)
-          case Some(pos) ⇒
+          case None => merged = Some(position)
+          case Some(pos) =>
             val (p, m) = pos.merge(position)
             merged = p
             adjustment = adjustment + m
@@ -61,8 +61,8 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
       })
       var newMap = details(instrument) -- ids
       merged match {
-        case Some(position) ⇒ newMap = newMap + (position.id -> position)
-        case None ⇒ // do nothing
+        case Some(position) => newMap = newMap + (position.id -> position)
+        case None => // do nothing
       }
       val newDetails = details + (instrument -> newMap)
       val newPortfolio = new NonStrictPortfolio(newDetails)
@@ -78,8 +78,8 @@ class NonStrictPortfolio protected(protected val details: Map[Instrument, Map[UU
 
   override def <<(newPosition: Position): (NonStrictPortfolio, PortfolioDiff) = {
     val oldPosition = newPosition.matching match {
-      case None ⇒ None
-      case Some(uuid) ⇒ for (byInstrument <- details.get(newPosition.instrument);
+      case None => None
+      case Some(uuid) => for (byInstrument <- details.get(newPosition.instrument);
                              p <- byInstrument.get(uuid)) yield p
     }
     val diff = newPosition diff oldPosition
