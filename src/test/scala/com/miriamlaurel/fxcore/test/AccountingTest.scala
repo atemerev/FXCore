@@ -3,13 +3,14 @@ package com.miriamlaurel.fxcore.test
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.asset.Currency
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
-import com.miriamlaurel.fxcore.market.{Market, QuoteSide}
+import com.miriamlaurel.fxcore.market.{Market, OrderBook, QuoteSide}
 import com.miriamlaurel.fxcore.portfolio.{MergePositions, NonStrictPortfolio, Position, StrictPortfolio}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class AccountingTest extends FunSuite with Matchers {
+class AccountingTest extends AnyFunSuite with Matchers {
 
-  val market = Market(
+  val market: Market = Market(
     book("EUR/USD", "1.3000", "1.3050"),
     book("USD/CHF", "1.2000", "1.2050"),
     book("USD/JPY", "125.00", "125.50")
@@ -102,6 +103,6 @@ class AccountingTest extends FunSuite with Matchers {
     diff2.actions.head.asInstanceOf[MergePositions].adjustment should equal(Money("-5 USD"))
   }
 
-  def book(instrument: String, bid: String, ask: String) =
-    OrderBookTest.fromCsv(System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
+  def book(instrument: String, bid: String, ask: String): OrderBook =
+    OrderBookTest.fromCsv("" + System.currentTimeMillis + "," + instrument + ",BIDS," + bid + ",1000000,ASKS," + ask + ",1000000")
 }

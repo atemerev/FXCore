@@ -3,9 +3,10 @@ package com.miriamlaurel.fxcore.test
 import com.miriamlaurel.fxcore._
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
 import com.miriamlaurel.fxcore.market._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class OrderBookTest extends FunSuite with Matchers {
+class OrderBookTest extends AnyFunSuite with Matchers {
 
   import OrderBookTest._
 
@@ -67,7 +68,7 @@ object OrderBookTest {
   }
 
   def toCsv(orderBook: OrderBook, timestamp: Long): String = {
-    timestamp + "," + orderBook.instrument.toString + ",BIDS," +
+    "" + timestamp + "," + orderBook.instrument.toString + ",BIDS," +
       orderBook.bids.values.flatMap(_.orders).toSeq.reverse.map(o => o.price.toString + "," + o.amount.toString).mkString(",") +
       ",ASKS," +
       orderBook.asks.values.flatMap(_.orders).map(o => o.price.toString + "," + o.amount.toString).mkString(",")

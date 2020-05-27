@@ -8,7 +8,7 @@ package com.miriamlaurel.fxcore
 
 class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble] {
 
-  def value = dbl
+  def value: Double = dbl
 
   def /(that: SafeDouble): SafeDouble = SafeDouble.apply(this.dbl / that.dbl)
 
@@ -20,7 +20,7 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
 
   def unary_-(): SafeDouble = SafeDouble.apply(-this.dbl)
 
-  def signum: Int = dbl.signum
+  def signum: Int = dbl.sign.toInt
 
   def toInt: Int = dbl.toInt
 
@@ -38,7 +38,7 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
   def ==(that: Int): Boolean = this.dbl == that.toDouble
   def ==(that: Long): Boolean = this.dbl == that.toDouble
 
-  override def toString = if (dbl == dbl.toInt) dbl.toInt.toString else BigDecimal.valueOf(dbl).bigDecimal.stripTrailingZeros.toPlainString
+  override def toString: String = if (dbl == dbl.toInt) dbl.toInt.toString else BigDecimal.valueOf(dbl).bigDecimal.stripTrailingZeros.toPlainString
 }
 
 object SafeDouble {
@@ -49,9 +49,9 @@ object SafeDouble {
   implicit def fromDouble(dbl: Double): SafeDouble = SafeDouble.apply(dbl)
   implicit def toDouble(safe: SafeDouble): Double = safe.toDouble
   implicit def fromInt(int: Int): SafeDouble = SafeDouble.apply(int)
-  implicit def fromLong(long: Long): SafeDouble = SafeDouble.apply(long)
+  implicit def fromLong(long: Long): SafeDouble = SafeDouble.apply(long.toDouble)
 
-  implicit val numeric = SafeDoubleNumeric
+  implicit val numeric: SafeDoubleNumeric.type = SafeDoubleNumeric
 
   def apply(value: Double)(implicit factor: Double = DEFAULT_SCALE_FACTOR): SafeDouble = {
     if (value > Long.MaxValue / factor || value < -Long.MaxValue / factor) new SafeDouble(value)

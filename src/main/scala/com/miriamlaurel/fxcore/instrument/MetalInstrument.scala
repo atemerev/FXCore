@@ -3,7 +3,7 @@ package com.miriamlaurel.fxcore.instrument
 import com.miriamlaurel.fxcore.asset._
 
 case class MetalInstrument(override val base: Metal, override val counter: Currency) extends Instrument {
-  override def toString = base + "/" + counter
+  override def toString = s"$base/$counter"
 }
 
 object MetalInstrument {

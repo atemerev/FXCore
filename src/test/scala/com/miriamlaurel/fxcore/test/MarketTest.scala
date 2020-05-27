@@ -3,9 +3,10 @@ package com.miriamlaurel.fxcore.test
 import com.miriamlaurel.fxcore.SafeDouble
 import com.miriamlaurel.fxcore.instrument.CurrencyPair
 import com.miriamlaurel.fxcore.market.Market
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class MarketTest extends FunSuite with Matchers {
+class MarketTest extends AnyFunSuite with Matchers {
   test("Trivial cases") {
     val book = OrderBookTest.fromCsv("1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25215,2000000,1.2522,1000000,ASKS,1.25245,2000000,1.25246,1000000")
     val market = Market(book)
