@@ -18,7 +18,7 @@ class SafeDouble(private val dbl: Double) extends AnyVal with Ordered[SafeDouble
 
   def *(that: SafeDouble): SafeDouble = SafeDouble.apply(this.dbl * that.dbl)
 
-  def unary_-(): SafeDouble = SafeDouble.apply(-this.dbl)
+  def unary_-: : SafeDouble = SafeDouble.apply(-this.dbl)
 
   def signum: Int = dbl.sign.toInt
 
