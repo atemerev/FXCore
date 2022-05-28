@@ -3,6 +3,7 @@ package ai.reactivity.fxcore.test
 import ai.reactivity.fxcore._
 import ai.reactivity.fxcore.instrument.CurrencyPair
 import ai.reactivity.fxcore.market._
+import ai.reactivity.fxcore.party.Party
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -50,6 +51,14 @@ class OrderBookTest extends AnyFunSuite with Matchers {
     val newBook3 = newBook2 addOrder Order(OrderKey(Me, EURUSD, QuoteSide.Bid, "*2"), SafeDouble(1000), SafeDouble(1.25214))
     "1273787999996,EUR/USD,BIDS,1.25208,1000000,1.25212,2000000,1.25213,1000000,1.25214,1000,1.25214,1000000,1.2522,1000000,1.2523,1000000,ASKS,1.2524,1000000,1.25246,1000000" should equal(toCsv(newBook3, ts))
   }
+
+  test("matcher smoke test") {
+    val aggressiveOrder = Order(Me, BTC/USD, QuoteSide.Bid, "agg1", 1500000, 1.2525)
+    val (book, matches: Seq[Match]) = orderBook.matchWith(aggressiveOrder, Seq.empty)
+    matches.map(_.quantity).sum === aggressiveOrder.amount
+    matches.size === 2
+  }
+
 }
 
 object OrderBookTest {
