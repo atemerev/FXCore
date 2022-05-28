@@ -1,7 +1,6 @@
 package ai.reactivity.fxcore.market
 
 import java.util.UUID
-
 import ai.reactivity.fxcore.instrument.Instrument
 import ai.reactivity.fxcore.market.OrderBook.Aggregate
 import ai.reactivity.fxcore.party.Party
@@ -228,6 +227,34 @@ class OrderBook private(val instrument: Instrument,
       Quote(instrument, bid, ask)
     }
   }
+
+  def matchWith(order: Order, matched: Seq[Match]): (OrderBook, Seq[Match]) = {
+    // assuming order is aggressive, "match only"
+    val oppositeLine = if (order.key.side == QuoteSide.Bid) this.asks else this.bids
+    if (oppositeLine.isEmpty || order.amount == 0) {
+      // nothing to match
+      (this, matched)
+    } else {
+      val (bestPrice, bestAgg) = oppositeLine.head
+      if (order.key.side == QuoteSide.Bid && bestPrice > order.price || order.key.side == QuoteSide.Ask && bestPrice < order.price) {
+        // best opposite aggregate does not match with the current order
+        (this, matched)
+      } else {
+        val oppOrder = bestAgg.orders.head
+        val commonAmount: SafeDouble = math.min(order.amount.toDouble, oppOrder.amount.toDouble)
+        val newOrder = order.copy(amount = order.amount - commonAmount)
+        val newBook = if (oppOrder.amount <= commonAmount) this.removeOrder(oppOrder.key) else {
+          val bookWithRemoved = this.removeOrder(oppOrder.key)
+          val newOppOrder = oppOrder.copy(amount = oppOrder.amount - commonAmount)
+          bookWithRemoved.addOrder(newOppOrder)
+        }
+        val matchEvent = Match(order.key.side, order.key.id, oppOrder.key.id, commonAmount, oppOrder.price)
+        newBook.matchWith(newOrder, matched :+ matchEvent)
+      }
+    }
+  }
+
+  def matchWith(order: Order): (OrderBook, Seq[Match]) = matchWith(order, Seq.empty)
 
   def quoteSpread(amount: SafeDouble): Quote = quoteSpread(amount, None)
 
